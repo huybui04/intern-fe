@@ -1,0 +1,40 @@
+# Node modules
+node_modules/
+
+# Optional: ignore local history
+node_modules/
+dist/
+# Optional: ignore test snapshots
+*.log
+npm-debug.log*
+__snapshots__/
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+coverage/
+.env
+.env.*
+*.bak
+*.tmp
+*.tsbuildinfo
+# Optional: ignore Mac system files
+*.swp
+*.swo
+
+# Optional: ignore Windows system files
+*.lnk
+
+# Optional: ignore generated files
+*.out
+*.exe
+*.dll
+*.class
+
+# Optional: ignore Jupyter notebooks
+*.ipynb
