@@ -2,9 +2,9 @@ import { Course } from "../types/course";
 import axiosInstance from "./axiosInstance";
 
 export const getCourses = async (
-  params?: any
+  payload?: any
 ): Promise<{ data: { rows: Course[] }; rowCount: number }> => {
-  const res = await axiosInstance.get("/courses", { params });
+  const res = await axiosInstance.post("/courses", payload);
   return res.data;
 };
 

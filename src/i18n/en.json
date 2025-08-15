@@ -134,15 +134,18 @@
   },
   "course": {
     "difficulty": {
+      "all": "All levels",
       "beginner": "Beginner",
       "intermediate": "Intermediate",
       "advanced": "Advanced"
     },
     "hour": "hours",
+    "category": "Category",
     "students": "students"
   },
   "common": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "search": "Search"
   },
   "courseDetail": {
     "notFound": "Course not found",

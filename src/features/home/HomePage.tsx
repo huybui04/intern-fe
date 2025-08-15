@@ -17,7 +17,6 @@ const HomePage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      // Chuẩn hóa payload đúng backend
       const startRow = 0;
       const endRow = 6;
       const filterModel: any = {};
@@ -25,28 +24,28 @@ const HomePage: React.FC = () => {
         filterModel.description = {
           filterType: "text",
           type: "contains",
-          filter: searchValue
+          filter: searchValue,
         };
       }
       if (difficulty) {
         filterModel.difficulty = {
           filterType: "text",
           type: "equals",
-          filter: difficulty
+          filter: difficulty,
         };
       }
       if (category) {
         filterModel.category = {
           filterType: "text",
           type: "equals",
-          filter: category
+          filter: category,
         };
       }
       const payload = {
         startRow,
         endRow,
         filterModel,
-        // sortModel: [{ colId: "title", sort: "asc" }], // nếu muốn sort mặc định
+        // sortModel: [{ colId: "title", sort: "asc" }],
       };
       const res = await getCourses(payload);
       setCourses(res.data.rows || []);
@@ -62,20 +61,28 @@ const HomePage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
+  useEffect(() => {
+    fetchCourses(search);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [difficulty, category]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchCourses(search);
   };
 
   return (
-  <div className="container py-5">
+    <div className="container py-5">
       {/* Hero Section */}
       <div className="hero-section text-center mb-5">
         <h1 className="display-4 fw-bold mb-3">{t("homePage.title")}</h1>
         <p className="lead mb-4">{t("homePage.subtitle")}</p>
         <div className="row justify-content-center">
           <div className="col-md-10">
-            <form className="row g-2 align-items-center justify-content-center" onSubmit={handleSearch}>
+            <form
+              className="row g-2 align-items-center justify-content-center"
+              onSubmit={handleSearch}
+            >
               <div className="col-md-4">
                 <input
                   type="text"
@@ -83,19 +90,25 @@ const HomePage: React.FC = () => {
                   placeholder={t("homePage.searchPlaceholder")}
                   aria-label="Search courses"
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
               <div className="col-md-3">
                 <select
                   className="form-select"
                   value={difficulty}
-                  onChange={e => setDifficulty(e.target.value)}
+                  onChange={(e) => setDifficulty(e.target.value)}
                 >
                   <option value="">{t("course.difficulty.all")}</option>
-                  <option value="beginner">{t("course.difficulty.beginner")}</option>
-                  <option value="intermediate">{t("course.difficulty.intermediate")}</option>
-                  <option value="advanced">{t("course.difficulty.advanced")}</option>
+                  <option value="beginner">
+                    {t("course.difficulty.beginner")}
+                  </option>
+                  <option value="intermediate">
+                    {t("course.difficulty.intermediate")}
+                  </option>
+                  <option value="advanced">
+                    {t("course.difficulty.advanced")}
+                  </option>
                 </select>
               </div>
               <div className="col-md-3">
@@ -104,7 +117,7 @@ const HomePage: React.FC = () => {
                   className="form-control"
                   placeholder={t("course.category")}
                   value={category}
-                  onChange={e => setCategory(e.target.value)}
+                  onChange={(e) => setCategory(e.target.value)}
                 />
               </div>
               <div className="col-md-2">
