@@ -11,14 +11,17 @@ const HomePage: React.FC = () => {
 
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
+  const [totalRows, setTotalRows] = useState(0);
   const [difficulty, setDifficulty] = useState("");
   const [category, setCategory] = useState("");
-  const fetchCourses = async (searchValue = "") => {
+  const fetchCourses = async (searchValue = "", pageNum = page) => {
     try {
       setLoading(true);
       setError(null);
-      const startRow = 0;
-      const endRow = 6;
+      const startRow = (pageNum - 1) * pageSize;
+      const endRow = pageNum * pageSize;
       const filterModel: any = {};
       if (searchValue) {
         filterModel.description = {
@@ -49,6 +52,7 @@ const HomePage: React.FC = () => {
       };
       const res = await getCourses(payload);
       setCourses(res.data.rows || []);
+      setTotalRows(res.rowCount || 0);
     } catch (err: any) {
       setError(t("courseList.loadError"));
     } finally {
@@ -61,6 +65,12 @@ const HomePage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
+  // Gọi lại khi đổi page
+  useEffect(() => {
+    fetchCourses(search, page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
   useEffect(() => {
     fetchCourses(search);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,7 +78,8 @@ const HomePage: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCourses(search);
+    setPage(1);
+    fetchCourses(search, 1);
   };
 
   return (
@@ -138,82 +149,133 @@ const HomePage: React.FC = () => {
         ) : error ? (
           <div className="text-danger">{error}</div>
         ) : (
-          <div className="row">
-            {courses.map((course) => (
-              <div key={course._id} className="col-lg-4 col-md-6 mb-4">
-                <div className="card h-100 shadow-sm">
-                  <img
-                    src={course.thumbnailUrl}
-                    className="card-img-top"
-                    alt={course.title}
-                    style={{ height: "200px", objectFit: "cover" }}
-                  />
-                  <div className="card-body d-flex flex-column">
-                    <div className="mb-2">
-                      <span
-                        className={`badge ${
-                          course.difficulty === "beginner"
-                            ? "bg-success"
+          <>
+            <div className="row">
+              {courses.map((course) => (
+                <div key={course._id} className="col-lg-4 col-md-6 mb-4">
+                  <div className="card h-100 shadow-sm">
+                    <img
+                      src={course.thumbnailUrl}
+                      className="card-img-top"
+                      alt={course.title}
+                      style={{ height: "200px", objectFit: "cover" }}
+                    />
+                    <div className="card-body d-flex flex-column">
+                      <div className="mb-2">
+                        <span
+                          className={`badge ${
+                            course.difficulty === "beginner"
+                              ? "bg-success"
+                              : course.difficulty === "intermediate"
+                              ? "bg-warning"
+                              : "bg-danger"
+                          }`}
+                        >
+                          {course.difficulty === "beginner"
+                            ? t("course.difficulty.beginner")
                             : course.difficulty === "intermediate"
-                            ? "bg-warning"
-                            : "bg-danger"
-                        }`}
-                      >
-                        {course.difficulty === "beginner"
-                          ? t("course.difficulty.beginner")
-                          : course.difficulty === "intermediate"
-                          ? t("course.difficulty.intermediate")
-                          : t("course.difficulty.advanced")}
-                      </span>
-                    </div>
-                    <h5 className="card-title">{course.title}</h5>
-                    <p className="card-text text-muted flex-grow-1">
-                      {course.description}
-                    </p>
-                    <div className="course-meta mb-3">
-                      <small className="text-muted d-block">
-                        <i className="fas fa-user me-1"></i>
-                        {course.instructorName}
-                      </small>
-                      <small className="text-muted d-block">
-                        <i className="fas fa-tag me-1"></i>
-                        {course.category}
-                      </small>
-                      <small className="text-muted d-block">
-                        <i className="fas fa-clock me-1"></i>
-                        {course.duration} {t("course.hour")}
-                      </small>
-                      <div className="d-flex align-items-center mt-2">
-                        <div className="me-3">
-                          <i className="fas fa-star text-warning me-1"></i>
-                          <small>{course.rating ?? "-"}</small>
-                        </div>
-                        <div>
-                          <i className="fas fa-users text-muted me-1"></i>
-                          <small>
-                            {course.studentsCount ?? 0} {t("course.students")}
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="price">
-                        <span className="h5 text-primary fw-bold">
-                          ${course.price}
+                            ? t("course.difficulty.intermediate")
+                            : t("course.difficulty.advanced")}
                         </span>
                       </div>
-                      <Link
-                        to={`/courses/${course._id}`}
-                        className="btn btn-primary btn-sm"
-                      >
-                        {t("homePage.detailButton")}
-                      </Link>
+                      <h5 className="card-title">{course.title}</h5>
+                      <p className="card-text text-muted flex-grow-1">
+                        {course.description}
+                      </p>
+                      <div className="course-meta mb-3">
+                        <small className="text-muted d-block">
+                          <i className="fas fa-user me-1"></i>
+                          {course.instructorName}
+                        </small>
+                        <small className="text-muted d-block">
+                          <i className="fas fa-tag me-1"></i>
+                          {course.category}
+                        </small>
+                        <small className="text-muted d-block">
+                          <i className="fas fa-clock me-1"></i>
+                          {course.duration} {t("course.hour")}
+                        </small>
+                        <div className="d-flex align-items-center mt-2">
+                          <div className="me-3">
+                            <i className="fas fa-star text-warning me-1"></i>
+                            <small>{course.rating ?? "-"}</small>
+                          </div>
+                          <div>
+                            <i className="fas fa-users text-muted me-1"></i>
+                            <small>
+                              {course.studentsCount ?? 0} {t("course.students")}
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div className="price">
+                          <span className="h5 text-primary fw-bold">
+                            ${course.price}
+                          </span>
+                        </div>
+                        <Link
+                          to={`/courses/${course._id}`}
+                          className="btn btn-primary btn-sm"
+                        >
+                          {t("homePage.detailButton")}
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            {/* Pagination */}
+            {totalRows > pageSize && (
+              <nav className="d-flex justify-content-center mt-4">
+                <ul className="pagination">
+                  <li className={`page-item${page === 1 ? " disabled" : ""}`}>
+                    <button
+                      className="page-link"
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                    >
+                      &laquo;
+                    </button>
+                  </li>
+                  {Array.from(
+                    { length: Math.ceil(totalRows / pageSize) },
+                    (_, i) => (
+                      <li
+                        key={i + 1}
+                        className={`page-item${
+                          page === i + 1 ? " active" : ""
+                        }`}
+                      >
+                        <button
+                          className="page-link"
+                          onClick={() => setPage(i + 1)}
+                        >
+                          {i + 1}
+                        </button>
+                      </li>
+                    )
+                  )}
+                  <li
+                    className={`page-item${
+                      page === Math.ceil(totalRows / pageSize)
+                        ? " disabled"
+                        : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => setPage(page + 1)}
+                      disabled={page === Math.ceil(totalRows / pageSize)}
+                    >
+                      &raquo;
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            )}
+          </>
         )}
       </div>
     </div>

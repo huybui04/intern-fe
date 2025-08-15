@@ -232,11 +232,28 @@ const CourseDetail: React.FC = () => {
             {lessons.length === 0 ? (
               <div>{t("courseDetail.noLessons")}</div>
             ) : (
-              <ul>
-                {lessons.map((lesson: any) => (
-                  <li key={lesson._id}>{lesson.title}</li>
+              <div className="list-group">
+                {lessons.map((lesson: any, idx: number) => (
+                  <button
+                    key={lesson._id}
+                    className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                    onClick={() => navigate(`/lessons/${lesson._id}`)}
+                  >
+                    <div>
+                      <span className="fw-bold me-2">{idx + 1}.</span>
+                      {lesson.title}
+                      {lesson.duration ? (
+                        <span className="badge bg-secondary ms-2">
+                          {lesson.duration} {t("course.hour")}
+                        </span>
+                      ) : null}
+                    </div>
+                    {lesson.hasAssignment && (
+                      <span className="badge bg-info ms-2">Quiz</span>
+                    )}
+                  </button>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         )}

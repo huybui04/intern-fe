@@ -6,6 +6,7 @@ import Login from "./features/auth/Login";
 import Register from "./features/auth/Register";
 import HomePage from "./features/home/HomePage";
 import CourseDetail from "./features/courses/CourseDetail";
+import LessonDetail from "./features/lessons/LessonDetail";
 import { UserResponse } from "./types/user";
 import Dashboard from "./features/dashboard/DashboardIndex";
 
@@ -37,8 +38,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register />} />
-          {/* <Route path="/courses" element={<CourseList />} /> */}
           <Route path="/courses/:id" element={<CourseDetail />} />
+          <Route path="/lessons/:id" element={<LessonDetail />} />
 
           {/* Protected Routes */}
           <Route
