@@ -48,7 +48,8 @@ const CourseDetail: React.FC = () => {
           ]);
         setCourse(courseRes.data);
         setLessons(lessonsRes.rowData || []);
-        setAssignments(assignmentsRes.rowData || []);
+        console.log("Assignments API result:", assignmentsRes);
+        setAssignments(assignmentsRes.data?.rows || []);
         setRelatedCourses(relatedRes.data.rows || []);
         // Check if current user is enrolled
         const userStr = localStorage.getItem("user");
@@ -263,11 +264,75 @@ const CourseDetail: React.FC = () => {
             {assignments.length === 0 ? (
               <div>{t("courseDetail.noAssignments")}</div>
             ) : (
-              <ul>
+              <div className="row">
                 {assignments.map((assignment: any) => (
-                  <li key={assignment._id}>{assignment.title}</li>
+                  <div
+                    key={assignment.id || assignment._id}
+                    className="col-md-6 col-lg-4 mb-3"
+                  >
+                    <div className="card h-100">
+                      <div className="card-body">
+                        <h5 className="card-title">{assignment.title}</h5>
+                        <p className="card-text text-muted small">
+                          {assignment.description &&
+                          assignment.description.length > 100
+                            ? `${assignment.description.substring(0, 100)}...`
+                            : assignment.description || "No description"}
+                        </p>
+
+                        <div className="small text-muted mb-3">
+                          {assignment.totalPoints && (
+                            <div>
+                              <strong>Points:</strong> {assignment.totalPoints}
+                            </div>
+                          )}
+                          {assignment.questions && (
+                            <div>
+                              <strong>Questions:</strong>{" "}
+                              {assignment.questions.length}
+                            </div>
+                          )}
+                          {assignment.timeLimit && (
+                            <div>
+                              <strong>Time Limit:</strong>{" "}
+                              {assignment.timeLimit} minutes
+                            </div>
+                          )}
+                          {assignment.dueDate && (
+                            <div>
+                              <strong>Due:</strong>{" "}
+                              {new Date(
+                                assignment.dueDate
+                              ).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="card-footer">
+                        {alreadyEnrolled ? (
+                          <button
+                            className="btn btn-primary w-100"
+                            onClick={() =>
+                              navigate(
+                                `/assignments/${
+                                  assignment.id || assignment._id
+                                }`
+                              )
+                            }
+                          >
+                            {t("assignment.startAssignment") || "Làm bài tập"}
+                          </button>
+                        ) : (
+                          <button className="btn btn-secondary w-100" disabled>
+                            {t("courseDetail.enroll")} to access
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         )}

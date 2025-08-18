@@ -1,9 +1,9 @@
-import { Assignment } from "../types/assignment";
+import { Assignment, Submission, Answer } from "../types/assignment";
 import axiosInstance from "./axiosInstance";
 
 export const getAssignmentsByCourse = async (
   courseId: string
-): Promise<{ rowData: Assignment[]; rowCount: number }> => {
+): Promise<{ data: { rows: Assignment[] }; rowCount?: number }> => {
   const res = await axiosInstance.get(`/assignments/course/${courseId}`);
   return res.data;
 };
@@ -31,30 +31,23 @@ export const updateAssignment = async (
 // Student submission APIs
 export const submitAssignment = async (
   assignmentId: string,
-  data: { answer: string; attachments?: File[] }
-): Promise<any> => {
-  const formData = new FormData();
-  formData.append("answer", data.answer);
-
-  if (data.attachments) {
-    data.attachments.forEach((file, index) => {
-      formData.append(`attachments`, file);
-    });
-  }
-
-  const res = await axiosInstance.post(
-    `/assignments/${assignmentId}/submit`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  answers: Answer[]
+): Promise<{
+  success: boolean;
+  message: string;
+  autoGraded?: boolean;
+  score?: number;
+  feedback?: string;
+}> => {
+  const res = await axiosInstance.post(`/assignments/${assignmentId}/submit`, {
+    answers,
+  });
   return res.data;
 };
 
-export const getMySubmission = async (assignmentId: string): Promise<any> => {
+export const getSubmissionDetail = async (
+  assignmentId: string
+): Promise<Submission> => {
   const res = await axiosInstance.get(
     `/assignments/${assignmentId}/submission`
   );

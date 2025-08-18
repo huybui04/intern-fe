@@ -7,6 +7,9 @@ import Register from "./features/auth/Register";
 import HomePage from "./features/home/HomePage";
 import CourseDetail from "./features/courses/CourseDetail";
 import LessonDetail from "./features/lessons/LessonDetail";
+import AssignmentDetail from "./features/assignments/AssignmentDetail";
+import AssignmentList from "./features/assignments/AssignmentList";
+// import AssignmentWorkflow from "./features/assignments/AssignmentWorkflow";
 import { UserResponse } from "./types/user";
 import Dashboard from "./features/dashboard/DashboardIndex";
 
@@ -52,14 +55,22 @@ function App() {
           />
 
           {/* Assignment Routes */}
-          {/* <Route
+          <Route
             path="/assignments/:id"
             element={
               <ProtectedRoute requireAuth={true}>
                 <AssignmentDetail />
               </ProtectedRoute>
             }
-          /> */}
+          />
+          <Route
+            path="/courses/:courseId/assignments"
+            element={
+              <ProtectedRoute requireAuth={true}>
+                <AssignmentList />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Lesson Routes */}
           {/* <Route
