@@ -48,7 +48,6 @@ const CourseDetail: React.FC = () => {
           ]);
         setCourse(courseRes.data);
         setLessons(lessonsRes.rowData || []);
-        console.log("Assignments API result:", assignmentsRes);
         setAssignments(assignmentsRes.data?.rows || []);
         setRelatedCourses(relatedRes.data.rows || []);
         // Check if current user is enrolled
