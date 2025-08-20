@@ -36,3 +36,8 @@ export const updateLesson = async (
   const res = await axiosInstance.put(`/lessons/${id}`, data);
   return res.data;
 };
+
+export const deleteLesson = async (id: string): Promise<any> => {
+  const res = await axiosInstance.delete(`/lessons/${id}`);
+  return res.data;
+};

@@ -38,3 +38,6 @@ coverage/
 
 # Optional: ignore Jupyter notebooks
 *.ipynb
+
+#
+INSTRUCTOR_DASHBOARD.md

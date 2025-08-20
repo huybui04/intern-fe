@@ -79,3 +79,37 @@ export const gradeSubmission = async (
   );
   return res.data;
 };
+
+export const deleteAssignment = async (id: string): Promise<any> => {
+  const res = await axiosInstance.delete(`/assignments/${id}`);
+  return res.data;
+};
+
+// Get assignments with pagination for AG Grid
+export const getAssignmentsGrid = async (params: {
+  startRow: number;
+  endRow: number;
+  sortModel?: any[];
+  filterModel?: any;
+}): Promise<{
+  success: boolean;
+  data: {
+    rows: Assignment[];
+    rowCount: number;
+    lastRow: number;
+  };
+}> => {
+  const { startRow, endRow, sortModel, filterModel } = params;
+  const pageSize = endRow - startRow;
+  const page = Math.floor(startRow / pageSize) + 1;
+
+  const payload = {
+    page,
+    pageSize,
+    sortModel,
+    filterModel,
+  };
+
+  const res = await axiosInstance.post("/assignments", payload);
+  return res.data;
+};

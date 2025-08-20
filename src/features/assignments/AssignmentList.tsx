@@ -105,7 +105,7 @@ const AssignmentList: React.FC = () => {
                       </div>
                       <div className="col-6">
                         <strong>{t("assignment.questions")}:</strong>{" "}
-                        {assignment.questions.length}
+                        {assignment.questions ? assignment.questions.length : 0}
                       </div>
                       {assignment.timeLimit && (
                         <div className="col-12 mt-1">
