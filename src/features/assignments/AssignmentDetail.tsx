@@ -133,10 +133,12 @@ const AssignmentDetail: React.FC = () => {
   const checkExistingSubmission = async () => {
     try {
       const submissionData = await getSubmissionDetail(id!);
+      console.log("Found existing submission:", submissionData);
       setSubmission(submissionData);
     } catch (error) {
       // No submission found - this is normal for new assignments
-      console.log("No existing submission found");
+      console.log("No existing submission found - ready to start assignment");
+      setSubmission(null);
     }
   };
 
@@ -245,17 +247,17 @@ const AssignmentDetail: React.FC = () => {
         <div className="card-header bg-light">
           <h5 className="card-title mb-0 d-flex justify-content-between align-items-center">
             <span>
-              <span className="badge bg-primary me-2">Câu {index + 1}</span>
+              <span className="badge bg-primary me-2">
+                {t("assignment.questionNumber", { number: index + 1 })}
+              </span>
               <span className="text-dark">
-                Loại:{" "}
-                {question.type === "multiple_choice"
-                  ? "Trắc nghiệm"
-                  : question.type === "true_false"
-                  ? "Đúng/Sai"
-                  : "Tự luận"}
+                {t("assignment.typeLabel")}:{" "}
+                {t(`assignment.type.${question.type}`)}
               </span>
             </span>
-            <span className="badge bg-success">{question.points} điểm</span>
+            <span className="badge bg-success">
+              {question.points} {t("assignment.points")}
+            </span>
           </h5>
         </div>
         <div className="card-body">
@@ -263,7 +265,9 @@ const AssignmentDetail: React.FC = () => {
             <div className="d-flex align-items-start mb-3">
               <i className="fas fa-question-circle text-primary me-2 mt-1"></i>
               <div>
-                <strong className="text-primary">Nội dung câu hỏi:</strong>
+                <strong className="text-primary">
+                  {t("assignment.questionContent")}
+                </strong>
                 <p className="card-text mt-2 fs-5 lh-base">
                   {question.question}
                 </p>
@@ -274,7 +278,9 @@ const AssignmentDetail: React.FC = () => {
           <div className="mt-4">
             <div className="d-flex align-items-center mb-3">
               <i className="fas fa-edit text-success me-2"></i>
-              <strong className="text-success">Chọn đáp án của bạn:</strong>
+              <strong className="text-success">
+                {t("assignment.selectAnswer")}
+              </strong>
             </div>
 
             {question.type === "multiple_choice" && question.options && (
@@ -389,16 +395,21 @@ const AssignmentDetail: React.FC = () => {
                 currentAnswer?.answer !== null &&
                 currentAnswer?.answer !== undefined ? (
                   <span className="badge bg-success fs-6 p-2">
-                    <i className="fas fa-check-circle me-1"></i> Đã trả lời
+                    <i className="fas fa-check-circle me-1"></i>{" "}
+                    {t("assignment.answered")}
                   </span>
                 ) : (
                   <span className="badge bg-warning fs-6 p-2">
-                    <i className="fas fa-clock me-1"></i> Chưa trả lời
+                    <i className="fas fa-clock me-1"></i>{" "}
+                    {t("assignment.notAnswered")}
                   </span>
                 )}
               </div>
               <small className="text-muted">
-                Câu hỏi {index + 1} / {assignment?.questions?.length || 0}
+                {t("assignment.questionProgress", {
+                  current: index + 1,
+                  total: assignment?.questions?.length || 0,
+                })}
               </small>
             </div>
           </div>
@@ -418,6 +429,15 @@ const AssignmentDetail: React.FC = () => {
       </div>
     );
   }
+
+  // Debug logs để kiểm tra trạng thái
+  console.log("Assignment Detail Debug:", {
+    assignment: assignment?.title,
+    hasQuestions: assignment?.questions?.length,
+    submission: submission?.id,
+    hasStarted,
+    loading,
+  });
 
   if (!assignment) {
     return (
@@ -556,16 +576,13 @@ const AssignmentDetail: React.FC = () => {
                     </>
                   ) : (
                     <div className="alert alert-info" role="alert">
-                      <h5>Bài tập chưa sẵn sàng</h5>
-                      <p>
-                        Bài tập này chưa có câu hỏi nào. Vui lòng quay lại sau
-                        hoặc liên hệ với giảng viên.
-                      </p>
+                      <h5>{t("assignment.notReadyTitle")}</h5>
+                      <p>{t("assignment.notReadyDesc")}</p>
                       <button
                         className="btn btn-outline-secondary"
                         onClick={() => navigate(-1)}
                       >
-                        {t("assignment.back") || "Quay lại"}
+                        {t("assignment.back")}
                       </button>
                     </div>
                   )}
@@ -578,11 +595,8 @@ const AssignmentDetail: React.FC = () => {
                     )
                   ) : (
                     <div className="alert alert-warning" role="alert">
-                      <h5>Không có câu hỏi nào</h5>
-                      <p>
-                        Bài tập này hiện tại chưa có câu hỏi nào để làm. Vui
-                        lòng liên hệ với giảng viên để biết thêm thông tin.
-                      </p>
+                      <h5>{t("assignment.noQuestionsTitle")}</h5>
+                      <p>{t("assignment.noQuestionsDesc")}</p>
                     </div>
                   )}
 
@@ -591,17 +605,19 @@ const AssignmentDetail: React.FC = () => {
                       <div className="card-body text-center">
                         <h5 className="card-title text-primary mb-3">
                           <i className="fas fa-paper-plane me-2"></i>
-                          Hoàn thành bài tập
+                          {t("assignment.finishAssignment")}
                         </h5>
                         <p className="text-muted mb-4">
-                          Hãy kiểm tra lại các câu trả lời trước khi nộp bài
+                          {t("assignment.checkBeforeSubmit")}
                         </p>
 
                         {/* Progress summary */}
                         <div className="row mb-4">
                           <div className="col-md-4">
                             <div className="text-center">
-                              <h6 className="text-success">Đã trả lời</h6>
+                              <h6 className="text-success">
+                                {t("assignment.answered")}
+                              </h6>
                               <span className="badge bg-success fs-6 p-2">
                                 {
                                   answers.filter(
@@ -616,7 +632,9 @@ const AssignmentDetail: React.FC = () => {
                           </div>
                           <div className="col-md-4">
                             <div className="text-center">
-                              <h6 className="text-warning">Chưa trả lời</h6>
+                              <h6 className="text-warning">
+                                {t("assignment.notAnswered")}
+                              </h6>
                               <span className="badge bg-warning fs-6 p-2">
                                 {
                                   answers.filter(
@@ -631,7 +649,9 @@ const AssignmentDetail: React.FC = () => {
                           </div>
                           <div className="col-md-4">
                             <div className="text-center">
-                              <h6 className="text-info">Tổng câu hỏi</h6>
+                              <h6 className="text-info">
+                                {t("assignment.totalQuestions")}
+                              </h6>
                               <span className="badge bg-info fs-6 p-2">
                                 {assignment.questions.length}
                               </span>
@@ -652,14 +672,12 @@ const AssignmentDetail: React.FC = () => {
                                   role="status"
                                   aria-hidden="true"
                                 ></span>
-                                {t("assignment.submitting") ||
-                                  "Đang nộp bài..."}
+                                {t("assignment.submitting")}
                               </>
                             ) : (
                               <>
                                 <i className="fas fa-check-circle me-2"></i>
-                                {t("assignment.submitAssignment") ||
-                                  "Nộp bài tập"}
+                                {t("assignment.submitAssignment")}
                               </>
                             )}
                           </button>
@@ -668,7 +686,7 @@ const AssignmentDetail: React.FC = () => {
                             onClick={() => navigate(-1)}
                           >
                             <i className="fas fa-arrow-left me-2"></i>
-                            {t("assignment.back") || "Quay lại"}
+                            {t("assignment.back")}
                           </button>
                         </div>
                       </div>
@@ -681,12 +699,52 @@ const AssignmentDetail: React.FC = () => {
 
           {submission && (
             <div className="text-center mt-4">
-              <button
-                className="btn btn-outline-secondary"
-                onClick={() => navigate(-1)}
-              >
-                {t("assignment.back") || "Back"}
-              </button>
+              <div className="card bg-light">
+                <div className="card-body">
+                  <h5 className="card-title text-success mb-3">
+                    <i className="fas fa-check-circle me-2"></i>
+                    {t("assignment.completedTitle")}
+                  </h5>
+                  <p className="text-muted mb-4">
+                    {t("assignment.completedDesc")}
+                  </p>
+                  <div className="d-flex justify-content-center gap-3">
+                    <button
+                      className="btn btn-primary btn-lg"
+                      onClick={() => {
+                        setSubmission(null);
+                        setHasStarted(false);
+                        setAnswers([]);
+                        // Reset answers for retake
+                        if (assignment?.questions) {
+                          const initialAnswers: Answer[] =
+                            assignment.questions.map((q: any) => ({
+                              questionId: q.id!,
+                              answer:
+                                q.type === "multiple_choice"
+                                  ? ""
+                                  : q.type === "true_false"
+                                  ? false
+                                  : "",
+                            }));
+                          setAnswers(initialAnswers);
+                        }
+                        toast.info(t("assignment.canRetake"));
+                      }}
+                    >
+                      <i className="fas fa-redo me-2"></i>
+                      {t("assignment.retake")}
+                    </button>
+                    <button
+                      className="btn btn-outline-secondary btn-lg"
+                      onClick={() => navigate(-1)}
+                    >
+                      <i className="fas fa-arrow-left me-2"></i>
+                      {t("assignment.back")}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

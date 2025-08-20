@@ -261,6 +261,29 @@
     "back": "Back",
     "noAssignments": "No assignments found for this course",
     "notPublished": "Not Published",
-    "timeLimitWarning": "You have {{minutes}} minutes to complete this assignment once you start."
+    "timeLimitWarning": "You have {{minutes}} minutes to complete this assignment once you start.",
+    "questionNumber": "Question {{number}}",
+    "typeLabel": "Type",
+    "type": {
+      "multiple_choice": "Multiple Choice",
+      "true_false": "True/False",
+      "essay": "Essay"
+    },
+    "questionContent": "Question content:",
+    "selectAnswer": "Select your answer:",
+    "answered": "Answered",
+    "notAnswered": "Not answered",
+    "questionProgress": "Question {{current}} / {{total}}",
+    "notReadyTitle": "Assignment not ready",
+    "notReadyDesc": "This assignment currently has no questions. Please come back later or contact your instructor.",
+    "noQuestionsTitle": "No questions",
+    "noQuestionsDesc": "This assignment currently has no questions to answer. Please contact your instructor for more information.",
+    "finishAssignment": "Finish Assignment",
+    "checkBeforeSubmit": "Please check your answers before submitting.",
+    "totalQuestions": "Total Questions",
+    "completedTitle": "Assignment completed",
+    "completedDesc": "You have successfully submitted this assignment. Do you want to retake it?",
+    "retake": "Retake Assignment",
+    "canRetake": "You can now retake this assignment!"
   }
 }

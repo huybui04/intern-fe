@@ -129,7 +129,7 @@ const AssignmentList: React.FC = () => {
                       to={`/assignments/${assignment.id}`}
                       className="btn btn-primary w-100"
                     >
-                      {t("assignment.startAssignment") || "Làm bài tập"}
+                      {t("assignment.startAssignment")}
                     </Link>
                   ) : (
                     <button className="btn btn-secondary w-100" disabled>
