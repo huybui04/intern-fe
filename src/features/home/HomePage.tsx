@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCourses } from "../../api/course";
+import { getCourses, getPublishedCourses } from "../../api/course";
 import { Course } from "../../types/course";
 import { useTranslation } from "react-i18next";
 
@@ -16,13 +16,21 @@ const HomePage: React.FC = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [difficulty, setDifficulty] = useState("");
   const [category, setCategory] = useState("");
+  const [isPublished, setIsPublished] = useState(true);
   const fetchCourses = async (searchValue = "", pageNum = page) => {
     try {
       setLoading(true);
       setError(null);
       const startRow = (pageNum - 1) * pageSize;
       const endRow = pageNum * pageSize;
-      const filterModel: any = {};
+      const filterModel: any = {
+        isPublished: {
+          filterType: "boolean",
+          type: "equals",
+          filter: isPublished,
+        },
+      };
+
       if (searchValue) {
         filterModel.description = {
           filterType: "text",

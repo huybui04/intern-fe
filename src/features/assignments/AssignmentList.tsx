@@ -105,7 +105,7 @@ const AssignmentList: React.FC = () => {
                       </div>
                       <div className="col-6">
                         <strong>{t("assignment.questions")}:</strong>{" "}
-                        {assignment.questions.length}
+                        {assignment.questions ? assignment.questions.length : 0}
                       </div>
                       {assignment.timeLimit && (
                         <div className="col-12 mt-1">
@@ -129,7 +129,7 @@ const AssignmentList: React.FC = () => {
                       to={`/assignments/${assignment.id}`}
                       className="btn btn-primary w-100"
                     >
-                      {t("assignment.startAssignment") || "Làm bài tập"}
+                      {t("assignment.startAssignment")}
                     </Link>
                   ) : (
                     <button className="btn btn-secondary w-100" disabled>

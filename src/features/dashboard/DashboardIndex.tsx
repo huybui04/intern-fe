@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import InstructorDashboard from "./InstructorDashboard";
+import InstructorDashboardEnhanced from "./InstructorDashboard";
 import AdminDashboard from "./AdminDashboard";
 
 const getCurrentUserRole = () => {
@@ -23,7 +23,7 @@ const Dashboard: React.FC = () => {
       case "student":
       // return <StudentDashboard />;
       case "instructor":
-        return <InstructorDashboard />;
+        return <InstructorDashboardEnhanced />;
       case "admin":
         return <AdminDashboard />;
       default:

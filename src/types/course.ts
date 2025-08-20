@@ -10,6 +10,7 @@ export interface Course {
   introVideoUrl: string;
   tags: string[];
   maxStudents: number;
+  isPublished?: boolean;
   createdAt?: string;
   updatedAt?: string;
   instructorName: string;

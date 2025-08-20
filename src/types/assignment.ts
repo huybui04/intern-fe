@@ -1,15 +1,16 @@
 export interface Assignment {
-  id: string;
+  _id?: string;
+  id?: string;
   courseId: string;
   lessonId?: string;
   title: string;
   description: string;
   instructions?: string;
-  questions: Question[];
+  questions?: Question[];
   totalPoints: number;
   timeLimit?: number;
   dueDate?: string;
-  isPublished: boolean;
+  isPublished?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
