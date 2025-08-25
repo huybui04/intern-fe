@@ -54,13 +54,15 @@ const Header: React.FC<HeaderProps> = ({ user, setUser }) => {
 
           {/* Main Navigation */}
           <div className="d-flex align-items-center gap-4">
-            <Link to="/" className="nav-link-modern">
-              {t("Home")}
-            </Link>
-            {user && (
-              <Link to="/dashboard" className="nav-link-modern">
-                {t("Dashboard")}
-              </Link>
+            {user && user.role === "instructor" && (
+              <>
+                <Link to="/" className="nav-link-modern">
+                  {t("Home")}
+                </Link>
+                <Link to="/dashboard" className="nav-link-modern">
+                  {t("Dashboard")}
+                </Link>
+              </>
             )}
           </div>
 

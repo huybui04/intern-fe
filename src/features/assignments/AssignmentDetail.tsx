@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import {
   Assignment,
@@ -100,23 +100,24 @@ const AssignmentDetail: React.FC = () => {
         );
       }
 
-      setAssignment(assignmentData);
-
-      // Initialize answers array
+      // Ensure every question has a unique id
       if (assignmentData.questions && assignmentData.questions.length > 0) {
+        assignmentData.questions = assignmentData.questions.map(
+          (q: any, idx: number) => ({
+            ...q,
+            id: q._id ? q._id.toString() : q.id ?? `q_${idx}`,
+          })
+        );
         const initialAnswers: Answer[] = assignmentData.questions.map(
           (q: any) => ({
-            questionId: q.id!,
-            answer:
-              q.type === "multiple_choice"
-                ? ""
-                : q.type === "true_false"
-                ? false
-                : "",
+            questionId: q._id ? q._id.toString() : q.id ?? "",
+            answer: "",
           })
         );
         setAnswers(initialAnswers);
+        console.log("[DEBUG] Initial answers:", initialAnswers);
       }
+      setAssignment(assignmentData);
 
       // Set time limit if exists
       if (assignmentData.timeLimit) {
@@ -134,7 +135,14 @@ const AssignmentDetail: React.FC = () => {
     try {
       const submissionData = await getSubmissionDetail(id!);
       console.log("Found existing submission:", submissionData);
-      setSubmission(submissionData);
+      const submission = (submissionData as any).data;
+      console.log("Processed submission:", submission);
+      // Only set submission if data is not null
+      if (submission && submission !== null) {
+        setSubmission(submission);
+      } else {
+        setSubmission(null);
+      }
     } catch (error) {
       // No submission found - this is normal for new assignments
       console.log("No existing submission found - ready to start assignment");
@@ -151,9 +159,16 @@ const AssignmentDetail: React.FC = () => {
     questionId: string,
     answer: string | boolean | number
   ) => {
-    setAnswers((prev) =>
-      prev.map((a) => (a.questionId === questionId ? { ...a, answer } : a))
-    );
+    setAnswers((prev) => {
+      const updated = prev.map((a) =>
+        a.questionId === questionId ? { ...a, answer, questionId } : a
+      );
+      console.log(
+        `[DEBUG] Answers after change for questionId ${questionId}:`,
+        updated
+      );
+      return updated;
+    });
   };
 
   const handleSubmit = async () => {
@@ -175,11 +190,15 @@ const AssignmentDetail: React.FC = () => {
     setSubmitting(true);
 
     try {
+      console.log("[DEBUG] Submitting answers:", { id, answers });
       const result = await submitAssignment(id!, answers);
+      console.log("[DEBUG] API response from submitAssignment:", result);
 
       if (result.success) {
         toast.success(
-          t("assignment.submitSuccess") || "Assignment submitted successfully!"
+          result.message ||
+            t("assignment.submitSuccess") ||
+            "Assignment submitted successfully!"
         );
 
         if (result.autoGraded) {
@@ -211,9 +230,16 @@ const AssignmentDetail: React.FC = () => {
             "Error submitting assignment"
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting assignment:", error);
-      toast.error(t("assignment.submitError") || "Error submitting assignment");
+      // Try to get error message from backend response
+      let msg = t("assignment.submitError") || "Error submitting assignment";
+      if (error?.response?.data?.message) {
+        msg = error.response.data.message;
+      } else if (error?.message) {
+        msg = error.message;
+      }
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -326,7 +352,12 @@ const AssignmentDetail: React.FC = () => {
                     id={`question_${question.id}_true`}
                     value="true"
                     checked={currentAnswer?.answer === true}
-                    onChange={() => handleAnswerChange(question.id!, true)}
+                    onChange={(e) =>
+                      handleAnswerChange(
+                        question.id!,
+                        e.target.value === "true"
+                      )
+                    }
                     disabled={!hasStarted || submission !== null}
                   />
                   <label
@@ -346,7 +377,12 @@ const AssignmentDetail: React.FC = () => {
                     id={`question_${question.id}_false`}
                     value="false"
                     checked={currentAnswer?.answer === false}
-                    onChange={() => handleAnswerChange(question.id!, false)}
+                    onChange={(e) =>
+                      handleAnswerChange(
+                        question.id!,
+                        e.target.value === "true"
+                      )
+                    }
                     disabled={!hasStarted || submission !== null}
                   />
                   <label
@@ -450,359 +486,364 @@ const AssignmentDetail: React.FC = () => {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card mb-4">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <h2>{assignment.title}</h2>
-              {timeRemaining !== null && hasStarted && (
-                <div
-                  className={`badge ${
-                    timeRemaining < 300 ? "bg-danger" : "bg-primary"
-                  } fs-6`}
-                >
-                  {t("assignment.timeRemaining")}: {formatTime(timeRemaining)}
-                </div>
-              )}
-            </div>
-            <div className="card-body">
-              <p className="card-text">{assignment.description}</p>
-              {assignment.instructions && (
-                <div className="alert alert-info">
-                  <strong>{t("assignment.instructions")}:</strong>{" "}
-                  {assignment.instructions}
-                </div>
-              )}
-
-              <div className="row mb-3">
-                <div className="col-md-6">
-                  <strong>{t("assignment.totalPoints")}:</strong>{" "}
-                  {assignment.totalPoints}
-                </div>
-                <div className="col-md-6">
-                  <strong>{t("assignment.questions")}:</strong>{" "}
-                  {assignment.questions?.length || 0}
-                </div>
-                {assignment.timeLimit && (
-                  <div className="col-md-6 mt-2">
-                    <strong>{t("assignment.timeLimit")}:</strong>{" "}
-                    {assignment.timeLimit} {t("assignment.minutes")}
-                  </div>
-                )}
-                {assignment.dueDate && (
-                  <div className="col-md-6 mt-2">
-                    <strong>{t("assignment.dueDate")}:</strong>{" "}
-                    {new Date(assignment.dueDate).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Show submission results if exists */}
-          {submission && (
+    <>
+      <div className="container mt-4">
+        <div className="row">
+          <div className="col-md-8">
             <div className="card mb-4">
-              <div className="card-header">
-                <h4>{t("assignment.submissionResults")}</h4>
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h2>{assignment.title}</h2>
+                {timeRemaining !== null && hasStarted && (
+                  <div
+                    className={`badge ${
+                      timeRemaining < 300 ? "bg-danger" : "bg-primary"
+                    } fs-6`}
+                  >
+                    {t("assignment.timeRemaining")}: {formatTime(timeRemaining)}
+                  </div>
+                )}
               </div>
               <div className="card-body">
-                <div className="row">
-                  <div className="col-md-6">
-                    <strong>{t("assignment.status")}:</strong>
-                    <span
-                      className={`badge ms-2 ${
-                        submission.status === "graded"
-                          ? "bg-success"
-                          : submission.status === "submitted"
-                          ? "bg-warning"
-                          : "bg-danger"
-                      }`}
-                    >
-                      {t(`assignment.status.${submission.status}`) ||
-                        submission.status}
-                    </span>
-                  </div>
-                  <div className="col-md-6">
-                    <strong>{t("assignment.submittedAt")}:</strong>{" "}
-                    {new Date(submission.submittedAt).toLocaleString()}
-                  </div>
-                  {submission.score !== undefined && (
-                    <div className="col-md-6 mt-2">
-                      <strong>{t("assignment.score")}:</strong>{" "}
-                      {submission.score}/{assignment.totalPoints}
-                    </div>
-                  )}
-                  {submission.gradedAt && (
-                    <div className="col-md-6 mt-2">
-                      <strong>{t("assignment.gradedAt")}:</strong>{" "}
-                      {new Date(submission.gradedAt).toLocaleString()}
-                    </div>
-                  )}
-                </div>
-                {submission.feedback && (
-                  <div className="mt-3">
-                    <strong>{t("assignment.feedback")}:</strong>
-                    <div className="alert alert-info mt-2">
-                      {submission.feedback}
-                    </div>
+                <p className="card-text">{assignment.description}</p>
+                {assignment.instructions && (
+                  <div className="alert alert-info">
+                    <strong>{t("assignment.instructions")}:</strong>{" "}
+                    {assignment.instructions}
                   </div>
                 )}
-              </div>
-            </div>
-          )}
 
-          {/* Assignment Questions */}
-          {!submission && (
-            <>
-              {!hasStarted ? (
-                <div className="text-center mb-4">
-                  {assignment.questions && assignment.questions.length > 0 ? (
-                    <>
-                      <button
-                        className="btn btn-primary btn-lg"
-                        onClick={handleStartAssignment}
-                      >
-                        {t("assignment.startAssignment") || "Làm bài tập"}
-                      </button>
-                      {assignment.timeLimit && (
-                        <p className="mt-2 text-muted">
-                          {t("assignment.timeLimitWarning", {
-                            minutes: assignment.timeLimit,
-                          }) ||
-                            `You have ${assignment.timeLimit} minutes to complete this assignment once you start.`}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <div className="alert alert-info" role="alert">
-                      <h5>{t("assignment.notReadyTitle")}</h5>
-                      <p>{t("assignment.notReadyDesc")}</p>
-                      <button
-                        className="btn btn-outline-secondary"
-                        onClick={() => navigate(-1)}
-                      >
-                        {t("assignment.back")}
-                      </button>
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <strong>{t("assignment.totalPoints")}:</strong>{" "}
+                    {assignment.totalPoints}
+                  </div>
+                  <div className="col-md-6">
+                    <strong>{t("assignment.questions")}:</strong>{" "}
+                    {assignment.questions?.length || 0}
+                  </div>
+                  {assignment.timeLimit && (
+                    <div className="col-md-6 mt-2">
+                      <strong>{t("assignment.timeLimit")}:</strong>{" "}
+                      {assignment.timeLimit} {t("assignment.minutes")}
+                    </div>
+                  )}
+                  {assignment.dueDate && (
+                    <div className="col-md-6 mt-2">
+                      <strong>{t("assignment.dueDate")}:</strong>{" "}
+                      {new Date(assignment.dueDate).toLocaleDateString()}
                     </div>
                   )}
                 </div>
-              ) : (
-                <>
-                  {assignment.questions && assignment.questions.length > 0 ? (
-                    assignment.questions.map((question, index) =>
-                      renderQuestion(question, index)
-                    )
-                  ) : (
-                    <div className="alert alert-warning" role="alert">
-                      <h5>{t("assignment.noQuestionsTitle")}</h5>
-                      <p>{t("assignment.noQuestionsDesc")}</p>
+              </div>
+            </div>
+
+            {/* Show submission results if exists */}
+            {submission && (
+              <div className="card mb-4">
+                <div className="card-header">
+                  <h4>{t("assignment.submissionResults")}</h4>
+                </div>
+                <div className="card-body">
+                  <div className="row">
+                    <div className="col-md-6">
+                      <strong>{t("assignment.status")}:</strong>
+                      <span
+                        className={`badge ms-2 ${
+                          submission.status === "graded"
+                            ? "bg-success"
+                            : submission.status === "submitted"
+                            ? "bg-warning"
+                            : "bg-success"
+                        }`}
+                      >
+                        {submission.status || "submitted"}
+                      </span>
                     </div>
-                  )}
-
-                  {assignment.questions && assignment.questions.length > 0 && (
-                    <div className="card mt-4 bg-light">
-                      <div className="card-body text-center">
-                        <h5 className="card-title text-primary mb-3">
-                          <i className="fas fa-paper-plane me-2"></i>
-                          {t("assignment.finishAssignment")}
-                        </h5>
-                        <p className="text-muted mb-4">
-                          {t("assignment.checkBeforeSubmit")}
-                        </p>
-
-                        {/* Progress summary */}
-                        <div className="row mb-4">
-                          <div className="col-md-4">
-                            <div className="text-center">
-                              <h6 className="text-success">
-                                {t("assignment.answered")}
-                              </h6>
-                              <span className="badge bg-success fs-6 p-2">
-                                {
-                                  answers.filter(
-                                    (a) =>
-                                      a.answer !== "" &&
-                                      a.answer !== null &&
-                                      a.answer !== undefined
-                                  ).length
-                                }
-                              </span>
-                            </div>
-                          </div>
-                          <div className="col-md-4">
-                            <div className="text-center">
-                              <h6 className="text-warning">
-                                {t("assignment.notAnswered")}
-                              </h6>
-                              <span className="badge bg-warning fs-6 p-2">
-                                {
-                                  answers.filter(
-                                    (a) =>
-                                      a.answer === "" ||
-                                      a.answer === null ||
-                                      a.answer === undefined
-                                  ).length
-                                }
-                              </span>
-                            </div>
-                          </div>
-                          <div className="col-md-4">
-                            <div className="text-center">
-                              <h6 className="text-info">
-                                {t("assignment.totalQuestions")}
-                              </h6>
-                              <span className="badge bg-info fs-6 p-2">
-                                {assignment.questions.length}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="d-flex justify-content-center gap-3">
-                          <button
-                            className="btn btn-success btn-lg px-4"
-                            onClick={handleSubmit}
-                            disabled={submitting}
-                          >
-                            {submitting ? (
-                              <>
-                                <span
-                                  className="spinner-border spinner-border-sm me-2"
-                                  role="status"
-                                  aria-hidden="true"
-                                ></span>
-                                {t("assignment.submitting")}
-                              </>
-                            ) : (
-                              <>
-                                <i className="fas fa-check-circle me-2"></i>
-                                {t("assignment.submitAssignment")}
-                              </>
-                            )}
-                          </button>
-                          <button
-                            className="btn btn-outline-secondary btn-lg px-4"
-                            onClick={() => navigate(-1)}
-                          >
-                            <i className="fas fa-arrow-left me-2"></i>
-                            {t("assignment.back")}
-                          </button>
-                        </div>
+                    <div className="col-md-6">
+                      <strong>{t("assignment.submittedAt")}:</strong>{" "}
+                      {submission.submittedAt
+                        ? new Date(submission.submittedAt).toLocaleString()
+                        : "N/A"}
+                    </div>
+                    {submission.score !== undefined && (
+                      <div className="col-md-6 mt-2">
+                        <strong>{t("assignment.score")}:</strong>{" "}
+                        {submission.score}/{assignment.totalPoints}
+                      </div>
+                    )}
+                    {submission.gradedAt && (
+                      <div className="col-md-6 mt-2">
+                        <strong>{t("assignment.gradedAt")}:</strong>{" "}
+                        {new Date(submission.gradedAt).toLocaleString()}
+                      </div>
+                    )}
+                  </div>
+                  {submission.feedback && (
+                    <div className="mt-3">
+                      <strong>{t("assignment.feedback")}:</strong>
+                      <div className="alert alert-info mt-2">
+                        {submission.feedback}
                       </div>
                     </div>
                   )}
-                </>
-              )}
-            </>
-          )}
+                </div>
+              </div>
+            )}
 
-          {submission && (
-            <div className="text-center mt-4">
-              <div className="card bg-light">
-                <div className="card-body">
-                  <h5 className="card-title text-success mb-3">
-                    <i className="fas fa-check-circle me-2"></i>
-                    {t("assignment.completedTitle")}
-                  </h5>
-                  <p className="text-muted mb-4">
-                    {t("assignment.completedDesc")}
-                  </p>
-                  <div className="d-flex justify-content-center gap-3">
-                    <button
-                      className="btn btn-primary btn-lg"
-                      onClick={() => {
-                        setSubmission(null);
-                        setHasStarted(false);
-                        setAnswers([]);
-                        // Reset answers for retake
-                        if (assignment?.questions) {
-                          const initialAnswers: Answer[] =
-                            assignment.questions.map((q: any) => ({
-                              questionId: q.id!,
-                              answer:
-                                q.type === "multiple_choice"
-                                  ? ""
-                                  : q.type === "true_false"
-                                  ? false
-                                  : "",
-                            }));
-                          setAnswers(initialAnswers);
-                        }
-                        toast.info(t("assignment.canRetake"));
-                      }}
-                    >
-                      <i className="fas fa-redo me-2"></i>
-                      {t("assignment.retake")}
-                    </button>
-                    <button
-                      className="btn btn-outline-secondary btn-lg"
-                      onClick={() => navigate(-1)}
-                    >
-                      <i className="fas fa-arrow-left me-2"></i>
-                      {t("assignment.back")}
-                    </button>
+            {/* Assignment Questions */}
+            {!submission && (
+              <>
+                {!hasStarted ? (
+                  <div className="text-center mb-4">
+                    {assignment.questions && assignment.questions.length > 0 ? (
+                      <>
+                        <button
+                          className="btn btn-primary btn-lg"
+                          onClick={handleStartAssignment}
+                        >
+                          {t("assignment.startAssignment") || "Làm bài tập"}
+                        </button>
+                        {assignment.timeLimit && (
+                          <p className="mt-2 text-muted">
+                            {t("assignment.timeLimitWarning", {
+                              minutes: assignment.timeLimit,
+                            }) ||
+                              `You have ${assignment.timeLimit} minutes to complete this assignment once you start.`}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="alert alert-info" role="alert">
+                        <h5>{t("assignment.notReadyTitle")}</h5>
+                        <p>{t("assignment.notReadyDesc")}</p>
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate(-1)}
+                        >
+                          {t("assignment.back")}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {assignment.questions && assignment.questions.length > 0 ? (
+                      assignment.questions.map((question, index) =>
+                        renderQuestion(question, index)
+                      )
+                    ) : (
+                      <div className="alert alert-warning" role="alert">
+                        <h5>{t("assignment.noQuestionsTitle")}</h5>
+                        <p>{t("assignment.noQuestionsDesc")}</p>
+                      </div>
+                    )}
+
+                    {assignment.questions &&
+                      assignment.questions.length > 0 && (
+                        <div className="card mt-4 bg-light">
+                          <div className="card-body text-center">
+                            <h5 className="card-title text-primary mb-3">
+                              <i className="fas fa-paper-plane me-2"></i>
+                              {t("assignment.finishAssignment")}
+                            </h5>
+                            <p className="text-muted mb-4">
+                              {t("assignment.checkBeforeSubmit")}
+                            </p>
+
+                            {/* Progress summary */}
+                            <div className="row mb-4">
+                              <div className="col-md-4">
+                                <div className="text-center">
+                                  <h6 className="text-success">
+                                    {t("assignment.answered")}
+                                  </h6>
+                                  <span className="badge bg-success fs-6 p-2">
+                                    {
+                                      answers.filter(
+                                        (a) =>
+                                          a.answer !== "" &&
+                                          a.answer !== null &&
+                                          a.answer !== undefined
+                                      ).length
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="col-md-4">
+                                <div className="text-center">
+                                  <h6 className="text-warning">
+                                    {t("assignment.notAnswered")}
+                                  </h6>
+                                  <span className="badge bg-warning fs-6 p-2">
+                                    {
+                                      answers.filter(
+                                        (a) =>
+                                          a.answer === "" ||
+                                          a.answer === null ||
+                                          a.answer === undefined
+                                      ).length
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="col-md-4">
+                                <div className="text-center">
+                                  <h6 className="text-info">
+                                    {t("assignment.totalQuestions")}
+                                  </h6>
+                                  <span className="badge bg-info fs-6 p-2">
+                                    {assignment.questions.length}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="d-flex justify-content-center gap-3">
+                              <button
+                                className="btn btn-success btn-lg px-4"
+                                onClick={handleSubmit}
+                                disabled={submitting}
+                              >
+                                {submitting ? (
+                                  <>
+                                    <span
+                                      className="spinner-border spinner-border-sm me-2"
+                                      role="status"
+                                      aria-hidden="true"
+                                    ></span>
+                                    {t("assignment.submitting")}
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-check-circle me-2"></i>
+                                    {t("assignment.submitAssignment")}
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                className="btn btn-outline-secondary btn-lg px-4"
+                                onClick={() => navigate(-1)}
+                              >
+                                <i className="fas fa-arrow-left me-2"></i>
+                                {t("assignment.back")}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                  </>
+                )}
+              </>
+            )}
+
+            {submission && (
+              <div className="text-center mt-4">
+                <div className="card bg-light">
+                  <div className="card-body">
+                    <h5 className="card-title text-success mb-3">
+                      <i className="fas fa-check-circle me-2"></i>
+                      {t("assignment.completedTitle")}
+                    </h5>
+                    <p className="text-muted mb-4">
+                      {t("assignment.completedDesc")}
+                    </p>
+                    <div className="d-flex justify-content-center gap-3">
+                      <button
+                        className="btn btn-primary btn-lg"
+                        onClick={() => {
+                          setSubmission(null);
+                          setHasStarted(false);
+                          setAnswers([]);
+                          // Reset answers for retake
+                          if (assignment?.questions) {
+                            const initialAnswers: Answer[] =
+                              assignment.questions.map((q: any) => ({
+                                questionId: q.id!,
+                                answer:
+                                  q.type === "multiple_choice"
+                                    ? ""
+                                    : q.type === "true_false"
+                                    ? false
+                                    : "",
+                              }));
+                            setAnswers(initialAnswers);
+                          }
+                          toast.info(t("assignment.canRetake"));
+                        }}
+                      >
+                        <i className="fas fa-redo me-2"></i>
+                        {t("assignment.retake")}
+                      </button>
+                      <button
+                        className="btn btn-outline-secondary btn-lg"
+                        onClick={() => navigate(-1)}
+                      >
+                        <i className="fas fa-arrow-left me-2"></i>
+                        {t("assignment.back")}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Sidebar */}
-        <div className="col-md-4">
-          <div className="card">
-            <div className="card-header">
-              <h5>{t("assignment.progress")}</h5>
-            </div>
-            <div className="card-body">
-              {hasStarted && !submission ? (
-                <>
-                  <p>
-                    {t("assignment.questionsAnswered")}:{" "}
-                    {
-                      answers.filter(
-                        (a) =>
-                          a.answer !== "" &&
-                          a.answer !== null &&
-                          a.answer !== undefined
-                      ).length
-                    }
-                    /{assignment.questions?.length || 0}
+          {/* Sidebar */}
+          <div className="col-md-4">
+            <div className="card">
+              <div className="card-header">
+                <h5>{t("assignment.progress")}</h5>
+              </div>
+              <div className="card-body">
+                {hasStarted && !submission ? (
+                  <>
+                    <p>
+                      {t("assignment.questionsAnswered")}:{" "}
+                      {
+                        answers.filter(
+                          (a) =>
+                            a.answer !== "" &&
+                            a.answer !== null &&
+                            a.answer !== undefined
+                        ).length
+                      }
+                      /{assignment.questions?.length || 0}
+                    </p>
+                    <div className="progress">
+                      <div
+                        className="progress-bar"
+                        role="progressbar"
+                        style={{
+                          width: `${
+                            (answers.filter(
+                              (a) =>
+                                a.answer !== "" &&
+                                a.answer !== null &&
+                                a.answer !== undefined
+                            ).length /
+                              (assignment.questions?.length || 1)) *
+                            100
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+                  </>
+                ) : submission ? (
+                  <p className="text-success">
+                    {t("assignment.completed") || "Assignment completed!"}
                   </p>
-                  <div className="progress">
-                    <div
-                      className="progress-bar"
-                      role="progressbar"
-                      style={{
-                        width: `${
-                          (answers.filter(
-                            (a) =>
-                              a.answer !== "" &&
-                              a.answer !== null &&
-                              a.answer !== undefined
-                          ).length /
-                            (assignment.questions?.length || 1)) *
-                          100
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                </>
-              ) : submission ? (
-                <p className="text-success">
-                  {t("assignment.completed") || "Assignment completed!"}
-                </p>
-              ) : (
-                <p className="text-muted">
-                  {t("assignment.notStarted") || "Assignment not started"}
-                </p>
-              )}
+                ) : (
+                  <p className="text-muted">
+                    {t("assignment.notStarted") || "Assignment not started"}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <ToastContainer position="top-center" autoClose={2500} />
+    </>
   );
 };
 
