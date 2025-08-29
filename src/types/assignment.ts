@@ -17,6 +17,7 @@ export interface Assignment {
 
 export interface Question {
   id?: string;
+  _id?: string;
   question: string;
   type: "multiple_choice" | "essay" | "true_false";
   options?: string[];
@@ -35,6 +36,15 @@ export interface Submission {
   status: "submitted" | "graded" | "late";
   gradedAt?: string;
   gradedBy?: string;
+}
+
+export interface AssignmentSubmission extends Submission {
+  _id?: string;
+}
+
+export interface SubmissionWithStudent extends Submission {
+  studentName?: string;
+  studentEmail?: string;
 }
 
 export interface Answer {

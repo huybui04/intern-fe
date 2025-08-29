@@ -145,7 +145,14 @@
   },
   "common": {
     "loading": "Loading...",
-    "search": "Search"
+    "search": "Search",
+    "confirmation": "Confirmation",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "confirmAction": "Are you sure you want to proceed?",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning"
   },
   "courseDetail": {
     "notFound": "Course not found",
@@ -284,6 +291,10 @@
     "completedTitle": "Assignment completed",
     "completedDesc": "You have successfully submitted this assignment. Do you want to retake it?",
     "retake": "Retake Assignment",
+    "retakeTitle": "Retake Assignment",
+    "retaking": "Retaking...",
+    "confirmRetake": "Are you sure you want to retake this assignment? Your current submission will be deleted and you'll start fresh.",
+    "retakeSuccess": "Assignment ready for retake! You can start again now.",
     "canRetake": "You can now retake this assignment!"
   },
   "instructor": {

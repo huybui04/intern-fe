@@ -12,7 +12,10 @@ import {
   getAssignmentDetail,
   submitAssignment,
   getSubmissionDetail,
+  deleteSubmissionByAssignment,
 } from "../../api/assignment";
+import AutoGradeResults from "./AutoGradeResults";
+import ConfirmationModal from "../../components/ConfirmationModal";
 
 // Add custom styles for better UI
 const customStyles = `
@@ -58,6 +61,8 @@ const AssignmentDetail: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
+  const [showGradeResults, setShowGradeResults] = useState(false);
+  const [showRetakeConfirm, setShowRetakeConfirm] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -201,16 +206,38 @@ const AssignmentDetail: React.FC = () => {
             "Assignment submitted successfully!"
         );
 
-        if (result.autoGraded) {
-          // Show immediate results for auto-graded assignments
-          toast.info(
-            `${t("assignment.score") || "Score"}: ${result.score}/${
-              assignment.totalPoints
-            }`
+        if (result.autoGraded && result.score !== undefined) {
+          // Show detailed results for auto-graded assignments
+          const scorePercentage = result.maxScore
+            ? ((result.score / result.maxScore) * 100).toFixed(1)
+            : "0";
+
+          toast.success(
+            `🎯 Auto-graded Score: ${result.score}/${
+              result.maxScore || assignment.totalPoints
+            } (${scorePercentage}%)`,
+            {
+              position: "top-center",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+            }
           );
-          if (result.feedback) {
+
+          // Show detailed results modal
+          setTimeout(() => {
+            setShowGradeResults(true);
+          }, 1000);
+
+          if (
+            result.autoGradeableScore !== undefined &&
+            result.autoGradeableScore !== result.score
+          ) {
             toast.info(
-              `${t("assignment.feedback") || "Feedback"}: ${result.feedback}`
+              `📝 Auto-gradeable questions: ${result.autoGradeableScore} points`,
+              { autoClose: 4000 }
             );
           }
         } else {
@@ -485,6 +512,36 @@ const AssignmentDetail: React.FC = () => {
     );
   }
 
+  // Retake assignment handler
+  const handleRetake = async () => {
+    setShowRetakeConfirm(true);
+  };
+
+  const confirmRetake = async () => {
+    if (!id) return;
+
+    try {
+      setShowRetakeConfirm(false);
+      setLoading(true);
+      await deleteSubmissionByAssignment(id);
+      setSubmission(null);
+      setAnswers(
+        assignment?.questions?.map((q: any) => ({
+          questionId: q._id ? q._id.toString() : q.id ?? "",
+          answer: "",
+        })) || []
+      );
+      setHasStarted(false);
+      toast.success(
+        t("assignment.retakeSuccess") || "You can retake the assignment now."
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to retake assignment");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="container mt-4">
@@ -633,8 +690,12 @@ const AssignmentDetail: React.FC = () => {
                       )
                     ) : (
                       <div className="alert alert-warning" role="alert">
-                        <h5>{t("assignment.noQuestionsTitle")}</h5>
-                        <p>{t("assignment.noQuestionsDesc")}</p>
+                        <h5 className="text-center">
+                          {t("assignment.noQuestionsTitle")}
+                        </h5>
+                        <p className="text-center">
+                          {t("assignment.noQuestionsDesc")}
+                        </p>
                       </div>
                     )}
 
@@ -750,29 +811,20 @@ const AssignmentDetail: React.FC = () => {
                     <div className="d-flex justify-content-center gap-3">
                       <button
                         className="btn btn-primary btn-lg"
-                        onClick={() => {
-                          setSubmission(null);
-                          setHasStarted(false);
-                          setAnswers([]);
-                          // Reset answers for retake
-                          if (assignment?.questions) {
-                            const initialAnswers: Answer[] =
-                              assignment.questions.map((q: any) => ({
-                                questionId: q.id!,
-                                answer:
-                                  q.type === "multiple_choice"
-                                    ? ""
-                                    : q.type === "true_false"
-                                    ? false
-                                    : "",
-                              }));
-                            setAnswers(initialAnswers);
-                          }
-                          toast.info(t("assignment.canRetake"));
-                        }}
+                        onClick={handleRetake}
+                        disabled={loading}
                       >
-                        <i className="fas fa-redo me-2"></i>
-                        {t("assignment.retake")}
+                        {loading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            {t("assignment.retaking") || "Retaking..."}
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-redo me-2"></i>
+                            {t("assignment.retake") || "Retake Assignment"}
+                          </>
+                        )}
                       </button>
                       <button
                         className="btn btn-outline-secondary btn-lg"
@@ -842,6 +894,33 @@ const AssignmentDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Auto-Grade Results Modal */}
+      {assignment && (
+        <AutoGradeResults
+          assignment={assignment}
+          answers={answers}
+          show={showGradeResults}
+          onClose={() => setShowGradeResults(false)}
+        />
+      )}
+
+      {/* Retake Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showRetakeConfirm}
+        title={t("assignment.retakeTitle") || "Retake Assignment"}
+        message={
+          t("assignment.confirmRetake") ||
+          "Are you sure you want to retake this assignment? Your current submission will be deleted and you'll start fresh."
+        }
+        confirmText={t("assignment.retake") || "Retake"}
+        cancelText={t("common.cancel") || "Cancel"}
+        onConfirm={confirmRetake}
+        onCancel={() => setShowRetakeConfirm(false)}
+        variant="warning"
+        icon="fas fa-redo"
+      />
+
       <ToastContainer position="top-center" autoClose={2500} />
     </>
   );

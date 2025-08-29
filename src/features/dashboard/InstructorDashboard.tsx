@@ -280,6 +280,18 @@ const InstructorDashboardEnhanced: React.FC = () => {
         cellRenderer: (params: any) => (
           <div className="d-flex gap-1">
             <button
+              className="btn btn-sm btn-outline-success"
+              onClick={() =>
+                window.open(
+                  `/assignments/${params.data._id}/submissions`,
+                  "_blank"
+                )
+              }
+              title={t("instructor.table.viewSubmissions")}
+            >
+              <i className="fas fa-list"></i>
+            </button>
+            <button
               className="btn btn-sm btn-outline-primary"
               onClick={() => handleEditAssignment(params.data)}
             >
@@ -338,6 +350,13 @@ const InstructorDashboardEnhanced: React.FC = () => {
       getRows: async (params: any) => {
         setAssignmentsLoading(true);
         try {
+          console.log("Fetching assignments with params:", {
+            startRow: params.startRow,
+            endRow: params.endRow,
+            sortModel: params.sortModel,
+            filterModel: params.filterModel,
+          });
+
           const result = await getAssignmentsGrid({
             startRow: params.startRow,
             endRow: params.endRow,
@@ -345,16 +364,27 @@ const InstructorDashboardEnhanced: React.FC = () => {
             filterModel: params.filterModel,
           });
 
-          if (result.success) {
-            setAssignments(result.data.rows);
-            params.successCallback(result.data.rows, result.data.lastRow);
+          console.log("Assignments API result:", result);
+
+          if (result.success && result.data && result.data.rows) {
+            const assignments = result.data.rows;
+            console.log("Setting assignments:", assignments);
+            setAssignments(assignments);
+            params.successCallback(
+              assignments,
+              result.data.lastRow || assignments.length
+            );
           } else {
+            console.error("Invalid result format:", result);
             params.failCallback();
+            toast.error("Invalid response format from server");
           }
         } catch (error) {
           console.error("Error loading assignments:", error);
           params.failCallback();
-          toast.error("Failed to load assignments");
+          toast.error(
+            "Failed to load assignments. Please check console for details."
+          );
         } finally {
           setAssignmentsLoading(false);
         }
@@ -714,10 +744,12 @@ const InstructorDashboardEnhanced: React.FC = () => {
                     paginationPageSize={20}
                     rowSelection="single"
                     animateRows={true}
+                    loading={assignmentsLoading}
                     defaultColDef={{
                       resizable: true,
                       sortable: true,
                       filter: true,
+                      minWidth: 100,
                     }}
                     overlayLoadingTemplate={`<span class="ag-overlay-loading-center">${t(
                       "instructor.table.loading"
@@ -725,6 +757,21 @@ const InstructorDashboardEnhanced: React.FC = () => {
                     overlayNoRowsTemplate={`<span class="ag-overlay-no-rows-center">${t(
                       "instructor.table.noData"
                     )}</span>`}
+                    suppressScrollOnNewData={true}
+                    rowBuffer={10}
+                    maxBlocksInCache={2}
+                    cacheBlockSize={20}
+                    maxConcurrentDatasourceRequests={1}
+                    onGridReady={(params) => {
+                      console.log("Assignment grid ready", params);
+                      // Force refresh
+                      setTimeout(() => {
+                        params.api.refreshInfiniteCache();
+                      }, 100);
+                    }}
+                    onFirstDataRendered={(params) => {
+                      console.log("Assignment first data rendered", params);
+                    }}
                   />
                 </div>
               </div>

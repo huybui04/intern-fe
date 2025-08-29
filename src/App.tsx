@@ -9,6 +9,8 @@ import CourseDetail from "./features/courses/CourseDetail";
 import LessonDetail from "./features/lessons/LessonDetail";
 import AssignmentDetail from "./features/assignments/AssignmentDetail";
 import AssignmentList from "./features/assignments/AssignmentList";
+import AssignmentSubmissions from "./features/assignments/AssignmentSubmissions";
+import SubmissionDetail from "./features/assignments/SubmissionDetail";
 // import AssignmentWorkflow from "./features/assignments/AssignmentWorkflow";
 import { UserResponse } from "./types/user";
 import Dashboard from "./features/dashboard/DashboardIndex";
@@ -68,6 +70,30 @@ function App() {
             element={
               <ProtectedRoute requireAuth={true}>
                 <AssignmentList />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Assignment Grading Routes (Instructor/Admin) */}
+          <Route
+            path="/assignments/:assignmentId/submissions"
+            element={
+              <ProtectedRoute
+                allowedRoles={["instructor", "admin"]}
+                requireAuth={true}
+              >
+                <AssignmentSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assignments/:assignmentId/submissions/:submissionId"
+            element={
+              <ProtectedRoute
+                allowedRoles={["instructor", "admin"]}
+                requireAuth={true}
+              >
+                <SubmissionDetail />
               </ProtectedRoute>
             }
           />
