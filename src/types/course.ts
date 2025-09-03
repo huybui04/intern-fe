@@ -1,8 +1,16 @@
+export enum ECourseCategory {
+  PROGRAMMING = "programming",
+  DESIGN = "design",
+  BUSINESS = "business",
+  MARKETING = "marketing",
+  LANGUAGE = "language",
+}
+
 export interface Course {
   _id: string;
   title: string;
   description: string;
-  category: string;
+  category: ECourseCategory;
   difficulty: "beginner" | "intermediate" | "advanced";
   duration: number;
   price: number;

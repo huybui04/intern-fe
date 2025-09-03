@@ -1,15 +1,23 @@
-import { is } from "@babel/types";
-
 export interface Lesson {
   _id: string;
   courseId: string;
   title: string;
-  description?: string;
+  slug?: string;
+  description: string;
   content: string;
-  videoUrl: string;
+  videoUrl?: string;
+  attachments?: {
+    name: string;
+    fileUrl: string;
+    fileType: string;
+  }[];
   order: number;
-  duration: number;
+  duration: number; //in minutes
   isPublished: boolean;
+  prerequisites?: string[];
+  quizId?: string;
+  viewsCount?: number;
+  tags?: string[];
   hasAssignment?: boolean;
   createdAt?: string;
   updatedAt?: string;

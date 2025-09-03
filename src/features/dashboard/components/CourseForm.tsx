@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Course } from "../../../types/course";
+import { Course, ECourseCategory } from "../../../types/course";
 
 interface CourseFormProps {
   course?: Course | null;
@@ -14,10 +14,23 @@ const CourseForm: React.FC<CourseFormProps> = ({
   onCancel,
 }) => {
   const { t } = useTranslation();
+
+  // Helper function to get category display labels
+  const getCategoryLabel = (category: ECourseCategory): string => {
+    const labels = {
+      [ECourseCategory.PROGRAMMING]: "Programming",
+      [ECourseCategory.DESIGN]: "Design",
+      [ECourseCategory.BUSINESS]: "Business",
+      [ECourseCategory.MARKETING]: "Marketing",
+      [ECourseCategory.LANGUAGE]: "Language",
+    };
+    return labels[category];
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "",
+    category: "" as ECourseCategory | "",
     difficulty: "beginner" as "beginner" | "intermediate" | "advanced",
     duration: 0,
     price: 0,
@@ -48,7 +61,11 @@ const CourseForm: React.FC<CourseFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    const dataToSave = {
+      ...formData,
+      category: formData.category as ECourseCategory, // Cast since we validate it's not empty in form
+    };
+    onSave(dataToSave);
   };
 
   const handleInputChange = (
@@ -116,11 +133,11 @@ const CourseForm: React.FC<CourseFormProps> = ({
                       required
                     >
                       <option value="">Select Category</option>
-                      <option value="Programming">Programming</option>
-                      <option value="Design">Design</option>
-                      <option value="Business">Business</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="Data Science">Data Science</option>
+                      {Object.values(ECourseCategory).map((category) => (
+                        <option key={category} value={category}>
+                          {getCategoryLabel(category)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

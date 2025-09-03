@@ -23,7 +23,7 @@ export const getCourseDetail = async (
 };
 
 export const createCourse = async (data: Partial<Course>): Promise<any> => {
-  const res = await axiosInstance.post("/courses", data);
+  const res = await axiosInstance.post("/courses/create", data);
   return res.data;
 };
 

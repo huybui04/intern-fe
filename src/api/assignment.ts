@@ -248,7 +248,7 @@ export const autoGradeSubmission = async (
 export const getSubmissionDetailWithAnswers = async (
   submissionId: string
 ): Promise<any> => {
-  const res = await axiosInstance.get(
+  const res = await axiosInstance.post(
     `/assignments/submission/${submissionId}/detail`
   );
   return res.data;

@@ -56,8 +56,43 @@ const SubmissionDetail: React.FC = () => {
       const assignmentData = (assignmentRes as any).data || assignmentRes;
       const submissionData = (submissionRes as any).data || submissionRes;
 
-      // Ensure questions have IDs
-      if (assignmentData.questions) {
+      // Transform submission data to match expected format
+      const transformedSubmission: DetailedSubmission = {
+        id: submissionData.submissionId || submissionData._id,
+        assignmentId: submissionData.assignmentId,
+        studentId: submissionData.studentId._id,
+        studentName: submissionData.studentId.username,
+        studentEmail: submissionData.studentId.email,
+        submittedAt: submissionData.submittedAt,
+        score: submissionData.score,
+        feedback: submissionData.feedback,
+        status: (submissionData.score !== undefined
+          ? "graded"
+          : "submitted") as "submitted" | "graded" | "late",
+        gradedAt: submissionData.gradedAt,
+        answers: submissionData.answers.map((answer: any) => ({
+          questionId: answer.questionId,
+          answer: answer.studentAnswer, // Map studentAnswer to answer
+        })),
+      };
+
+      // Create assignment questions from answer data
+      const questionsFromAnswers = submissionData.answers.map(
+        (answer: any) => ({
+          id: answer.questionId,
+          question: answer.question,
+          type: answer.questionType,
+          options: answer.options,
+          correctAnswer: answer.correctAnswer,
+          points: answer.points,
+        })
+      );
+
+      // If assignment data doesn't have questions, use questions from answers
+      if (!assignmentData.questions || assignmentData.questions.length === 0) {
+        assignmentData.questions = questionsFromAnswers;
+      } else {
+        // Ensure questions have IDs
         assignmentData.questions = assignmentData.questions.map(
           (q: any, idx: number) => ({
             ...q,
@@ -66,10 +101,15 @@ const SubmissionDetail: React.FC = () => {
         );
       }
 
+      // Update assignment with data from submission if needed
+      if (submissionData.assignment) {
+        Object.assign(assignmentData, submissionData.assignment);
+      }
+
       setAssignment(assignmentData);
-      setSubmission(submissionData);
-      setManualGrade(submissionData.score || 0);
-      setFeedback(submissionData.feedback || "");
+      setSubmission(transformedSubmission);
+      setManualGrade(transformedSubmission.score || 0);
+      setFeedback(transformedSubmission.feedback || "");
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Error loading submission details");

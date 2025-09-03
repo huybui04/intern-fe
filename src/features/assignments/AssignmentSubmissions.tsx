@@ -14,6 +14,7 @@ import "./AssignmentGrading.css";
 interface SubmissionWithStudent extends Submission {
   studentName?: string;
   studentEmail?: string;
+  username?: string;
 }
 
 const AssignmentSubmissions: React.FC = () => {
@@ -48,7 +49,15 @@ const AssignmentSubmissions: React.FC = () => {
     try {
       const res = await getAssignmentSubmissions(assignmentId!);
       const submissionsData = (res as any).data || res;
-      setSubmissions(submissionsData);
+
+      // Map submissions to include student info at the top level
+      const mappedSubmissions = submissionsData.map((submission: any) => ({
+        ...submission,
+        id: submission._id,
+        studentName: submission.studentId?.username || "Unknown Student",
+      }));
+
+      setSubmissions(mappedSubmissions);
     } catch (error) {
       console.error("Error fetching submissions:", error);
       toast.error("Error loading submissions");
@@ -372,14 +381,14 @@ const AssignmentSubmissions: React.FC = () => {
                                     )}
                                   </button>
                                 )}
-                              <button
+                              {/* <button
                                 className="btn btn-sm btn-outline-warning"
                                 data-bs-toggle="modal"
                                 data-bs-target={`#gradeModal${submission.id}`}
                               >
                                 <i className="fas fa-edit me-1"></i>
                                 Grade
-                              </button>
+                              </button> */}
                             </div>
                           </td>
                         </tr>
@@ -446,7 +455,7 @@ const GradeModal: React.FC<GradeModalProps> = ({
         <div className="modal-content">
           <div className="modal-header">
             <h5 className="modal-title">
-              Grade Submission - {submission.studentName || "Unknown Student"}
+              Grade Submission - {submission.username || "Unknown Student"}
             </h5>
             <button
               type="button"

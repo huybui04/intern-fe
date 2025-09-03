@@ -304,6 +304,7 @@
     "assignments": "Assignments",
     "statistics": "Statistics",
     "addCourse": "Add Course",
+    "addAssignment": "Add Assignment",
     "editCourse": "Edit Course",
     "deleteCourse": "Delete Course",
     "courseForm": {

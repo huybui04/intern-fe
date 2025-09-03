@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 ModuleRegistry.registerModules([AllCommunityModule]);
 import {
   getCoursesGrid,
+  getCourses,
   deleteCourse,
   createCourse,
   updateCourse,
@@ -83,8 +84,8 @@ const InstructorDashboardEnhanced: React.FC = () => {
       {
         field: "instructorName" as any,
         headerName: t("instructor.table.instructor"),
-        sortable: true,
-        filter: true,
+        sortable: false,
+        filter: false,
         flex: 1,
       },
       {
@@ -118,7 +119,7 @@ const InstructorDashboardEnhanced: React.FC = () => {
       {
         field: "studentsCount" as any,
         headerName: t("instructor.table.students"),
-        sortable: true,
+        sortable: false,
         valueFormatter: (params: any) => {
           const students = params.value ?? 0;
           const max =
@@ -129,6 +130,7 @@ const InstructorDashboardEnhanced: React.FC = () => {
               : "-";
           return `${students}/${max}`;
         },
+        filter: false,
         flex: 1,
       },
       {
@@ -141,22 +143,8 @@ const InstructorDashboardEnhanced: React.FC = () => {
             {params.value ? "Published" : "Draft"}
           </span>
         ),
-        flex: 1,
-      },
-      {
-        field: "createdAt" as any,
-        headerName: t("instructor.table.createdAt"),
-        sortable: true,
-        valueFormatter: (params: any) =>
-          new Date(params.value).toLocaleDateString("en-GB"),
-        flex: 1,
-      },
-      {
-        field: "updatedAt" as any,
-        headerName: t("instructor.table.updatedAt"),
-        sortable: true,
-        valueFormatter: (params: any) =>
-          new Date(params.value).toLocaleDateString("en-GB"),
+        sortable: false,
+        filter: false,
         flex: 1,
       },
       {
@@ -200,13 +188,15 @@ const InstructorDashboardEnhanced: React.FC = () => {
         field: "duration" as any,
         headerName: t("instructor.table.duration"),
         sortable: true,
+        filter: false,
         valueFormatter: (params: any) => `${params.value || 0} min`,
         flex: 1,
       },
       {
         field: "order" as any,
         headerName: "Order",
-        sortable: true,
+        sortable: false,
+        filter: false,
         flex: 1,
       },
       {
@@ -259,7 +249,8 @@ const InstructorDashboardEnhanced: React.FC = () => {
       {
         field: "totalPoints" as any,
         headerName: "Points",
-        sortable: true,
+        sortable: false,
+        filter: false,
         flex: 1,
       },
       {
@@ -272,6 +263,8 @@ const InstructorDashboardEnhanced: React.FC = () => {
             {params.value ? "Published" : "Draft"}
           </span>
         ),
+        sortable: false,
+        filter: false,
         flex: 1,
       },
       {
@@ -289,7 +282,8 @@ const InstructorDashboardEnhanced: React.FC = () => {
               }
               title={t("instructor.table.viewSubmissions")}
             >
-              <i className="fas fa-list"></i>
+              {/* <i className="fas fa-list"></i> */}
+              {t("instructor.table.view")}
             </button>
             <button
               className="btn btn-sm btn-outline-primary"
@@ -554,12 +548,29 @@ const InstructorDashboardEnhanced: React.FC = () => {
     }
   }, []);
 
+  // Load courses for dropdown
+  const loadCoursesForDropdown = useCallback(async () => {
+    try {
+      const result = await getCourses();
+      setCourses(result.data.rows);
+    } catch (error) {
+      console.error("Error loading courses for dropdown:", error);
+    }
+  }, []);
+
   // Load lessons when course selection changes
   useEffect(() => {
     if (selectedCourseId && activeTab === "lessons") {
       loadLessons(selectedCourseId);
     }
   }, [selectedCourseId, activeTab, loadLessons]);
+
+  // Load courses when switching to lessons tab
+  useEffect(() => {
+    if (activeTab === "lessons") {
+      loadCoursesForDropdown();
+    }
+  }, [activeTab, loadCoursesForDropdown]);
 
   return (
     <div className="container-fluid">
