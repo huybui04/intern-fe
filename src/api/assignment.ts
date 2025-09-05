@@ -8,6 +8,13 @@ export const getAssignmentsByCourse = async (
   return res.data;
 };
 
+export const getAssignmentsByLesson = async (
+  lessonId: string
+): Promise<{ data: { rows: Assignment[] }; rowCount?: number }> => {
+  const res = await axiosInstance.post("/assignments/lesson", { lessonId });
+  return res.data;
+};
+
 export const getAssignmentDetail = async (id: string): Promise<Assignment> => {
   const res = await axiosInstance.get(`/assignments/${id}`);
   return res.data;

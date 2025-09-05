@@ -12,10 +12,10 @@ export interface Course {
   description: string;
   category: ECourseCategory;
   difficulty: "beginner" | "intermediate" | "advanced";
-  duration: number;
+  duration?: number;
   price: number;
   thumbnailUrl: string;
-  introVideoUrl: string;
+  introVideoUrl?: string;
   tags: string[];
   maxStudents: number;
   isPublished?: boolean;

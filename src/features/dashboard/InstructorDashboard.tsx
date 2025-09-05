@@ -24,6 +24,7 @@ import {
 } from "../../api/lesson";
 import {
   getAssignmentsGrid,
+  getAssignmentsByLesson,
   deleteAssignment,
   createAssignment,
   updateAssignment,
@@ -56,6 +57,9 @@ const InstructorDashboardEnhanced: React.FC = () => {
   // Assignment data and states
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(false);
+
+    // Assignment lesson filter
+    const [selectedLessonId, setSelectedLessonId] = useState<string>("");
 
   // Form states
   const [showCourseForm, setShowCourseForm] = useState(false);
@@ -193,8 +197,15 @@ const InstructorDashboardEnhanced: React.FC = () => {
         flex: 1,
       },
       {
-        field: "order" as any,
-        headerName: "Order",
+        field: "isPublished" as any,
+        headerName: t("instructor.table.published"),
+        cellRenderer: (params: any) => (
+          <span
+            className={`badge ${params.value ? "bg-success" : "bg-danger"}`}
+          >
+            {params.value ? "Published" : "Draft"}
+          </span>
+        ),
         sortable: false,
         filter: false,
         flex: 1,
@@ -344,41 +355,27 @@ const InstructorDashboardEnhanced: React.FC = () => {
       getRows: async (params: any) => {
         setAssignmentsLoading(true);
         try {
-          console.log("Fetching assignments with params:", {
-            startRow: params.startRow,
-            endRow: params.endRow,
-            sortModel: params.sortModel,
-            filterModel: params.filterModel,
-          });
-
+          // Use grid API when no lesson filter
           const result = await getAssignmentsGrid({
             startRow: params.startRow,
             endRow: params.endRow,
             sortModel: params.sortModel,
             filterModel: params.filterModel,
           });
-
-          console.log("Assignments API result:", result);
-
           if (result.success && result.data && result.data.rows) {
             const assignments = result.data.rows;
-            console.log("Setting assignments:", assignments);
             setAssignments(assignments);
             params.successCallback(
               assignments,
               result.data.lastRow || assignments.length
             );
           } else {
-            console.error("Invalid result format:", result);
             params.failCallback();
             toast.error("Invalid response format from server");
           }
         } catch (error) {
-          console.error("Error loading assignments:", error);
           params.failCallback();
-          toast.error(
-            "Failed to load assignments. Please check console for details."
-          );
+          toast.error("Failed to load assignments. Please check console for details.");
         } finally {
           setAssignmentsLoading(false);
         }
@@ -572,6 +569,78 @@ const InstructorDashboardEnhanced: React.FC = () => {
     }
   }, [activeTab, loadCoursesForDropdown]);
 
+  // Load courses and lessons when switching to assignments tab
+  useEffect(() => {
+    if (activeTab === "assignments") {
+      loadCoursesForDropdown();
+      // If we have a selected course, load its lessons
+      if (selectedCourseId) {
+        loadLessons(selectedCourseId);
+      }
+    }
+  }, [activeTab, loadCoursesForDropdown, selectedCourseId, loadLessons]);
+
+  // Load assignments by lesson when lesson selection changes
+  const loadAssignmentsByLesson = useCallback(async (lessonId: string) => {
+    if (!lessonId) return;
+    
+    setAssignmentsLoading(true);
+    try {
+      console.log("Loading assignments for lesson:", lessonId);
+      const result = await getAssignmentsByLesson(lessonId);
+      console.log("Assignments by lesson result:", result);
+      const assignments = result.data.rows || [];
+      setAssignments(assignments);
+    } catch (error) {
+      console.error("Error loading assignments by lesson:", error);
+      toast.error("Failed to load assignments for selected lesson");
+      setAssignments([]);
+    } finally {
+      setAssignmentsLoading(false);
+    }
+  }, []);
+
+  // Load all assignments (similar to how lessons are loaded)
+  const loadAllAssignments = useCallback(async () => {
+    setAssignmentsLoading(true);
+    try {
+      console.log("Loading all assignments");
+      // Use the grid API but extract just the data
+      const result = await getAssignmentsGrid({
+        startRow: 0,
+        endRow: 1000, // Load a large batch to get all assignments
+        sortModel: [],
+        filterModel: {},
+      });
+      
+      if (result.success && result.data && result.data.rows) {
+        const assignments = result.data.rows;
+        console.log("All assignments loaded:", assignments);
+        setAssignments(assignments);
+      } else {
+        console.error("Invalid result format:", result);
+        setAssignments([]);
+      }
+    } catch (error) {
+      console.error("Error loading all assignments:", error);
+      toast.error("Failed to load assignments");
+      setAssignments([]);
+    } finally {
+      setAssignmentsLoading(false);
+    }
+  }, []);
+
+  // Load assignments when lesson selection changes in assignments tab
+  useEffect(() => {
+    if (activeTab === "assignments") {
+      if (selectedLessonId) {
+        loadAssignmentsByLesson(selectedLessonId);
+      } else {
+        loadAllAssignments();
+      }
+    }
+  }, [activeTab, selectedLessonId, loadAssignmentsByLesson, loadAllAssignments]);
+
   return (
     <div className="container-fluid">
       <div className="row">
@@ -735,12 +804,44 @@ const InstructorDashboardEnhanced: React.FC = () => {
               <div>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <h2>{t("instructor.assignments")}</h2>
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleAddAssignment}
-                  >
-                    {t("instructor.addAssignment")}
-                  </button>
+                  <div className="d-flex gap-3">
+                    <select
+                      className="form-select"
+                      value={selectedCourseId}
+                      onChange={(e) => {
+                        setSelectedCourseId(e.target.value);
+                        setSelectedLessonId(""); // Reset lesson selection when course changes
+                      }}
+                      style={{ width: "200px" }}
+                    >
+                      <option value="">Select a course...</option>
+                      {courses.map((course) => (
+                        <option key={course._id} value={course._id}>
+                          {course.title}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="form-select"
+                      value={selectedLessonId}
+                      onChange={(e) => setSelectedLessonId(e.target.value)}
+                      style={{ width: "250px" }}
+                      disabled={!selectedCourseId}
+                    >
+                      <option value="">Select a lesson...</option>
+                      {lessons.map((lesson) => (
+                        <option key={lesson._id} value={lesson._id}>
+                          {lesson.title}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleAddAssignment}
+                    >
+                      {t("instructor.addAssignment")}
+                    </button>
+                  </div>
                 </div>
 
                 <div
@@ -749,8 +850,7 @@ const InstructorDashboardEnhanced: React.FC = () => {
                 >
                   <AgGridReact
                     columnDefs={assignmentColumnDefs}
-                    rowModelType="infinite"
-                    datasource={assignmentsDataSource}
+                    rowData={assignments}
                     pagination={true}
                     paginationPageSize={20}
                     rowSelection="single"
@@ -768,21 +868,6 @@ const InstructorDashboardEnhanced: React.FC = () => {
                     overlayNoRowsTemplate={`<span class="ag-overlay-no-rows-center">${t(
                       "instructor.table.noData"
                     )}</span>`}
-                    suppressScrollOnNewData={true}
-                    rowBuffer={10}
-                    maxBlocksInCache={2}
-                    cacheBlockSize={20}
-                    maxConcurrentDatasourceRequests={1}
-                    onGridReady={(params) => {
-                      console.log("Assignment grid ready", params);
-                      // Force refresh
-                      setTimeout(() => {
-                        params.api.refreshInfiniteCache();
-                      }, 100);
-                    }}
-                    onFirstDataRendered={(params) => {
-                      console.log("Assignment first data rendered", params);
-                    }}
                   />
                 </div>
               </div>
