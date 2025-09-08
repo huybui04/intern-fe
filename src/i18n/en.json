@@ -237,6 +237,7 @@
     "gradedAt": "Graded At",
     "score": "Score",
     "feedback": "Feedback",
+    "statusLabel": "Status",
     "status": {
       "draft": "Draft",
       "available": "Available",

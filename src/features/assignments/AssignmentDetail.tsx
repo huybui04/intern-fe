@@ -603,7 +603,7 @@ const AssignmentDetail: React.FC = () => {
                 <div className="card-body">
                   <div className="row">
                     <div className="col-md-6">
-                      <strong>{t("assignment.status")}:</strong>
+                      <strong>{t("assignment.statusLabel")}:</strong>
                       <span
                         className={`badge ms-2 ${
                           submission.status === "graded"

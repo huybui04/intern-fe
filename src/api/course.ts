@@ -54,7 +54,7 @@ export const getInstructorCourses = async (): Promise<{
   data: { rows: Course[] };
   rowCount: number;
 }> => {
-  const res = await axiosInstance.get("/courses/instructor/my-courses");
+  const res = await axiosInstance.post("/courses/instructor/my-courses");
   return res.data;
 };
 
@@ -117,6 +117,75 @@ export const getCoursesGrid = async (params: {
     filterModel,
   };
 
-  const res = await axiosInstance.post("/courses", payload);
-  return res.data;
+  try {
+    console.log("Calling courses API with payload:", payload);
+    const res = await axiosInstance.post("/courses/instructor/my-courses", payload);
+    console.log("Raw courses API response:", res.data);
+
+    // Handle the actual API response format
+    if (res.data && res.data.success && res.data.data) {
+      const responseData = res.data.data;
+      let courses: Course[] = [];
+      
+      // Check if data.rows exists (paginated format)
+      if (responseData.rows && Array.isArray(responseData.rows)) {
+        courses = responseData.rows;
+      } 
+      // Check if data itself is an array
+      else if (Array.isArray(responseData)) {
+        courses = responseData;
+      }
+      // Check if data has courses property
+      else if (responseData.courses && Array.isArray(responseData.courses)) {
+        courses = responseData.courses;
+      }
+      else {
+        console.error("No valid courses array found in:", responseData);
+        courses = [];
+      }
+      
+      const totalCount = res.data.rowCount || responseData.rowCount || courses.length;
+      const isLastPage = courses.length < pageSize;
+      
+      console.log("Processed courses:", courses);
+      console.log("Total count:", totalCount);
+      
+      return {
+        success: true,
+        data: {
+          rows: courses,
+          rowCount: totalCount,
+          lastRow: isLastPage ? startRow + courses.length : -1,
+          pageInfo: {
+            startRow,
+            endRow: startRow + courses.length,
+            pageSize,
+            currentPage: page,
+            totalPages: Math.ceil(totalCount / pageSize),
+          },
+        },
+      };
+    } else {
+      // Unexpected format
+      console.error("Unexpected courses API response format:", res.data);
+      return {
+        success: false,
+        data: {
+          rows: [],
+          rowCount: 0,
+          lastRow: 0,
+          pageInfo: {
+            startRow,
+            endRow: startRow,
+            pageSize,
+            currentPage: page,
+            totalPages: 0,
+          },
+        },
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    throw error;
+  }
 };

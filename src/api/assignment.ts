@@ -23,7 +23,7 @@ export const getAssignmentDetail = async (id: string): Promise<Assignment> => {
 export const createAssignment = async (
   data: Partial<Assignment>
 ): Promise<any> => {
-  const res = await axiosInstance.post("/assignments", data);
+  const res = await axiosInstance.post("/assignments/create", data);
   return res.data;
 };
 
@@ -302,9 +302,7 @@ export const getAssignmentsGrid = async (params: {
   };
 
   try {
-    console.log("Calling assignments API with payload:", payload);
     const res = await axiosInstance.post("/assignments", payload);
-    console.log("Raw API response:", res.data);
 
     // Handle the specific response format from your API
     if (
@@ -313,12 +311,7 @@ export const getAssignmentsGrid = async (params: {
       res.data.data &&
       Array.isArray(res.data.data)
     ) {
-      // Response format: { message: string, data: Assignment[] }
       const assignments = res.data.data;
-      console.log(
-        "Processed assignments from message/data format:",
-        assignments
-      );
       return {
         success: true,
         data: {
@@ -357,29 +350,10 @@ export const getAssignmentsGrid = async (params: {
       );
     }
   } catch (error) {
-    console.error("Error fetching assignments:", error);
 
     // Fallback with sample data for debugging
     console.log("Using fallback sample data");
     const sampleData: Assignment[] = [
-      {
-        _id: "66a1a39df65d99b62bb3c349",
-        courseId: "687a274ee32e3b9e19d7a4df",
-        title: "React State Management",
-        description: "Bài tập về quản lý state với React Hook và Context API.",
-        totalPoints: 10,
-        dueDate: "2025-09-10T23:59:59.000Z",
-        isPublished: true,
-      },
-      {
-        _id: "66a1a39df65d99b62bb3c348",
-        courseId: "687a274ee32e3b9e19d7a4df",
-        title: "Assignment 2: CSS Layout",
-        description: "Hãy thiết kế lại trang landing page với Flexbox và Grid.",
-        totalPoints: 10,
-        dueDate: "2025-09-05T23:59:59.000Z",
-        isPublished: true,
-      },
       {
         _id: "68a296322758691b50ad7fa8",
         courseId: "687a274ee32e3b9e19d7a4df",

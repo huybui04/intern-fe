@@ -12,6 +12,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 import {
   getCoursesGrid,
   getCourses,
+  getInstructorCourses,
   deleteCourse,
   createCourse,
   updateCourse,
@@ -324,6 +325,7 @@ const InstructorDashboardEnhanced: React.FC = () => {
       getRows: async (params: any) => {
         setCoursesLoading(true);
         try {
+          console.log("Course grid params:", params);
           const result = await getCoursesGrid({
             startRow: params.startRow,
             endRow: params.endRow,
@@ -331,10 +333,26 @@ const InstructorDashboardEnhanced: React.FC = () => {
             filterModel: params.filterModel,
           });
 
-          if (result.success) {
-            setCourses(result.data.rows);
-            params.successCallback(result.data.rows, result.data.lastRow);
+          console.log("Course grid result:", result);
+
+          if (result.success && result.data && result.data.rows) {
+            const courses = result.data.rows;
+            console.log("Courses data:", courses);
+            console.log("Total courses:", courses.length);
+            
+            setCourses(courses);
+            
+            // Calculate lastRow properly
+            const lastRow = result.data.lastRow !== undefined 
+              ? result.data.lastRow 
+              : (courses.length < (params.endRow - params.startRow) 
+                  ? params.startRow + courses.length 
+                  : -1);
+            
+            console.log("Setting lastRow to:", lastRow);
+            params.successCallback(courses, lastRow);
           } else {
+            console.error("Invalid result format:", result);
             params.failCallback();
           }
         } catch (error) {
@@ -545,55 +563,44 @@ const InstructorDashboardEnhanced: React.FC = () => {
     }
   }, []);
 
-  // Load courses for dropdown
   const loadCoursesForDropdown = useCallback(async () => {
     try {
-      const result = await getCourses();
+      const result = await getInstructorCourses();
       setCourses(result.data.rows);
     } catch (error) {
-      console.error("Error loading courses for dropdown:", error);
     }
   }, []);
 
-  // Load lessons when course selection changes
   useEffect(() => {
     if (selectedCourseId && activeTab === "lessons") {
       loadLessons(selectedCourseId);
     }
   }, [selectedCourseId, activeTab, loadLessons]);
 
-  // Load courses when switching to lessons tab
   useEffect(() => {
     if (activeTab === "lessons") {
       loadCoursesForDropdown();
     }
   }, [activeTab, loadCoursesForDropdown]);
 
-  // Load courses and lessons when switching to assignments tab
   useEffect(() => {
     if (activeTab === "assignments") {
       loadCoursesForDropdown();
-      // If we have a selected course, load its lessons
       if (selectedCourseId) {
         loadLessons(selectedCourseId);
       }
     }
   }, [activeTab, loadCoursesForDropdown, selectedCourseId, loadLessons]);
 
-  // Load assignments by lesson when lesson selection changes
   const loadAssignmentsByLesson = useCallback(async (lessonId: string) => {
     if (!lessonId) return;
     
     setAssignmentsLoading(true);
     try {
-      console.log("Loading assignments for lesson:", lessonId);
       const result = await getAssignmentsByLesson(lessonId);
-      console.log("Assignments by lesson result:", result);
       const assignments = result.data.rows || [];
       setAssignments(assignments);
     } catch (error) {
-      console.error("Error loading assignments by lesson:", error);
-      toast.error("Failed to load assignments for selected lesson");
       setAssignments([]);
     } finally {
       setAssignmentsLoading(false);
@@ -604,11 +611,9 @@ const InstructorDashboardEnhanced: React.FC = () => {
   const loadAllAssignments = useCallback(async () => {
     setAssignmentsLoading(true);
     try {
-      console.log("Loading all assignments");
-      // Use the grid API but extract just the data
       const result = await getAssignmentsGrid({
         startRow: 0,
-        endRow: 1000, // Load a large batch to get all assignments
+        endRow: 1000, 
         sortModel: [],
         filterModel: {},
       });
@@ -716,6 +721,7 @@ const InstructorDashboardEnhanced: React.FC = () => {
                     paginationPageSize={20}
                     rowSelection="single"
                     animateRows={true}
+                    cacheBlockSize={20}
                     defaultColDef={{
                       resizable: true,
                       sortable: true,
