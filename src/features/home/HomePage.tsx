@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getCourses, getPublishedCourses } from "../../api/course";
-import { Course } from "../../types/course";
+import { Course, ECourseCategory } from "../../types/course";
 import { useTranslation } from "react-i18next";
 
 const HomePage: React.FC = () => {
@@ -17,6 +17,25 @@ const HomePage: React.FC = () => {
   const [difficulty, setDifficulty] = useState("");
   const [category, setCategory] = useState("");
   const [isPublished, setIsPublished] = useState(true);
+
+  // Helper function to get category display labels
+  const getCategoryLabel = (category: ECourseCategory): string => {
+    switch (category) {
+      case ECourseCategory.PROGRAMMING:
+        return t("course.category.programming");
+      case ECourseCategory.DESIGN:
+        return t("course.category.design");
+      case ECourseCategory.BUSINESS:
+        return t("course.category.business");
+      case ECourseCategory.MARKETING:
+        return t("course.category.marketing");
+      case ECourseCategory.LANGUAGE:
+        return t("course.category.language");
+      default:
+        return category;
+    }
+  };
+
   const fetchCourses = async (searchValue = "", pageNum = page) => {
     try {
       setLoading(true);
@@ -131,13 +150,18 @@ const HomePage: React.FC = () => {
                 </select>
               </div>
               <div className="col-md-3">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder={t("course.category")}
+                <select
+                  className="form-select"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                />
+                >
+                  <option value="">{t("course.category.all")}</option>
+                  {Object.values(ECourseCategory).map((categoryValue) => (
+                    <option key={categoryValue} value={categoryValue}>
+                      {getCategoryLabel(categoryValue)}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="col-md-2">
                 <button className="btn btn-primary w-100" type="submit">
@@ -197,7 +221,7 @@ const HomePage: React.FC = () => {
                         </small>
                         <small className="text-muted d-block">
                           <i className="fas fa-tag me-1"></i>
-                          {course.category}
+                          {getCategoryLabel(course.category)}
                         </small>
                         <small className="text-muted d-block">
                           <i className="fas fa-clock me-1"></i>

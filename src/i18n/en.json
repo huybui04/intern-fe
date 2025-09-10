@@ -139,8 +139,16 @@
       "intermediate": "Intermediate",
       "advanced": "Advanced"
     },
+    "category": {
+      "all": "All categories",
+      "programming": "Programming",
+      "design": "Design",
+      "business": "Business",
+      "marketing": "Marketing",
+      "language": "Language"
+    },
     "hour": "hours",
-    "category": "Category",
+    "categoryLabel": "Category",
     "students": "students"
   },
   "common": {

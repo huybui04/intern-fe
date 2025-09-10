@@ -29,6 +29,7 @@ const CourseDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
   const [jobMsg, setJobMsg] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const pollingRef = useRef<number | null>(null);
   // const [enrollMessage, setEnrollMessage] = useState<string | null>(null);
 
@@ -56,6 +57,11 @@ const CourseDetail: React.FC = () => {
           try {
             const user = JSON.parse(userStr);
             const studentId = user.userId || user._id || user.id;
+            const role = user.role;
+            
+            // Set user role
+            setUserRole(role);
+            
             if (
               courseRes.data.enrolledStudents &&
               Array.isArray(courseRes.data.enrolledStudents) &&
@@ -184,17 +190,29 @@ const CourseDetail: React.FC = () => {
             <p className="mb-1">
               <strong>{t("courseDetail.price")}:</strong> ${course.price}
             </p>
-            <button
-              className="btn btn-primary mt-3"
-              onClick={handleEnroll}
-              disabled={enrolling || alreadyEnrolled}
-            >
-              {alreadyEnrolled
-                ? t("courseDetail.enrolled")
-                : enrolling
-                ? t("courseDetail.enrolling")
-                : t("courseDetail.enroll")}
-            </button>
+            {userRole === "student" ? (
+              <button
+                className="btn btn-primary mt-3"
+                onClick={handleEnroll}
+                disabled={enrolling || alreadyEnrolled}
+              >
+                {alreadyEnrolled
+                  ? t("courseDetail.enrolled")
+                  : enrolling
+                  ? t("courseDetail.enrolling")
+                  : t("courseDetail.enroll")}
+              </button>
+            ) : (
+              <button
+                className="btn btn-secondary mt-3"
+                disabled
+                title={userRole ? `${userRole}s cannot enroll in courses` : "Please login as a student to enroll"}
+              >
+                {userRole
+                  ? "Enroll"
+                  : "Login to Enroll"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -309,22 +327,34 @@ const CourseDetail: React.FC = () => {
                       </div>
 
                       <div className="card-footer">
-                        {alreadyEnrolled ? (
-                          <button
-                            className="btn btn-primary w-100"
-                            onClick={() =>
-                              navigate(
-                                `/assignments/${
-                                  assignment.id || assignment._id
-                                }`
-                              )
-                            }
-                          >
-                            {t("assignment.startAssignment") || "Làm bài tập"}
-                          </button>
+                        {userRole === "student" ? (
+                          alreadyEnrolled ? (
+                            <button
+                              className="btn btn-primary w-100"
+                              onClick={() =>
+                                navigate(
+                                  `/assignments/${
+                                    assignment.id || assignment._id
+                                  }`
+                                )
+                              }
+                            >
+                              {t("assignment.startAssignment")}
+                            </button>
+                          ) : (
+                            <button className="btn btn-secondary w-100" disabled>
+                              {t("courseDetail.enroll")} to access
+                            </button>
+                          )
                         ) : (
-                          <button className="btn btn-secondary w-100" disabled>
-                            {t("courseDetail.enroll")} to access
+                          <button 
+                            className="btn btn-secondary w-100" 
+                            disabled
+                            title={userRole ? `${userRole}s cannot access assignments` : "Please login to access assignments"}
+                          >
+                            {userRole 
+                              ? `Enroll to access`
+                              : "Login to access"}
                           </button>
                         )}
                       </div>
@@ -344,16 +374,44 @@ const CourseDetail: React.FC = () => {
               <div className="row">
                 {relatedCourses.map((rc) => (
                   <div key={rc._id} className="col-md-4 mb-3">
-                    <div className="card h-100">
+                    <div 
+                      className="card h-100"
+                      style={{ cursor: 'pointer', transition: 'transform 0.2s ease' }}
+                      onClick={() => navigate(`/courses/${rc._id}`)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '';
+                      }}
+                    >
                       <img
                         src={rc.thumbnailUrl}
                         className="card-img-top"
                         alt={rc.title}
+                        style={{ height: '200px', objectFit: 'cover' }}
                       />
-                      <div className="card-body">
+                      <div className="card-body d-flex flex-column">
                         <h5 className="card-title">{rc.title}</h5>
-                        <p className="card-text">{rc.instructorName}</p>
-                        <p className="card-text">${rc.price}</p>
+                        <p className="card-text text-muted mb-2">{rc.instructorName}</p>
+                        <div className="mt-auto d-flex justify-content-between align-items-center">
+                          <span className="h6 text-primary mb-0">${rc.price}</span>
+                          <small className="text-muted">
+                            {rc.difficulty && (
+                              <span className={`badge ${
+                                rc.difficulty === "beginner"
+                                  ? "bg-success"
+                                  : rc.difficulty === "intermediate"
+                                  ? "bg-warning"
+                                  : "bg-danger"
+                              }`}>
+                                {t(`course.difficulty.${rc.difficulty}`)}
+                              </span>
+                            )}
+                          </small>
+                        </div>
                       </div>
                     </div>
                   </div>
